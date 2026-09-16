@@ -1,0 +1,11 @@
+# Allowlist: no credenciales, herramientas administrativas ni configuración nativa generada.
+*
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!run.py
+!src/
+!src/**
+src/**/__pycache__/
+src/**/*.pyc
+src/munigest/_build_settings.py

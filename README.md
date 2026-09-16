@@ -57,6 +57,8 @@ El proyecto municipal es **`lxvmwjcqdjoidgpinmgm`**. Su esquema inicial ya fue a
 3. Crear el primer usuario en Supabase Auth y autorizar su perfil con las instrucciones de [puesta en marcha](docs/PUESTA_EN_MARCHA.md).
 4. Ejecutar el programa y entrar con ese usuario.
 
+Para crear cuentas individuales de administrador, mesa de partes, gestor o consulta se incluye una [herramienta operativa de alta](docs/USUARIOS.md). El [despliegue del servidor](docs/DESPLIEGUE.md) incluye Dockerfile y Compose. Las cuentas reales y la publicación del servicio siguen pendientes de sus datos y acceso administrativo correspondientes.
+
 La aplicación no incluye claves secretas, contraseñas de base de datos ni credenciales `service_role`. Las sesiones se mantienen en memoria y se renuevan de forma asíncrona. Un fallo de conexión real nunca activa automáticamente la demostración.
 
 ## Plataformas

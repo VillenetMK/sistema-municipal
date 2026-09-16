@@ -6,10 +6,11 @@ Fecha: 16 de septiembre de 2026.
 
 | Comprobación | Resultado |
 |---|---|
-| Pruebas Python | 31 aprobadas |
+| Pruebas Python | 45 aprobadas: 31 originales y 14 de alta administrativa |
 | Análisis estático Ruff | Sin errores |
 | Construcción de las pantallas | Login, resumen, bandeja, registro, detalle y catálogo; anchos 390 y 1280 |
-| Arranque del servidor Flet | HTTP 200 y documento de inicio del cliente servido |
+| Arranque del servidor Flet | HTTP 200 usando PORT; configuración inválida rechazada antes del arranque |
+| Alta administrativa | API simulada: cuatro roles, aislamiento de proyecto, correos confirmados, reanudación, permisos existentes y fallos parciales |
 | Esquema SQL en PostgreSQL aislado (PGlite) | Las tres migraciones aplicadas correctamente, incluida la configuración de Chiclayo |
 | Contrato SQL | Roles, aislamiento por área, idempotencia, control de versión, estados, bloqueo de edición directa, adjuntos y auditoría aprobados |
 | Migraciones en Supabase municipal | `20260916153745_municipal_core`, `20260916154951_municipal_access_hardening` y `20260916162200_chiclayo_institutional_configuration` |
@@ -24,6 +25,8 @@ El proyecto municipal tiene ocho tablas públicas protegidas por RLS, un contado
 
 La adaptación de identidad, catálogo y demostración pasó nuevamente las 31 pruebas Python y Ruff. El contrato SQL también pasó después de aplicar las tres migraciones en una base aislada. Las pruebas de arranque HTTP y rechazo anónimo corresponden a la validación inicial; esta adaptación no modifica servidor, autenticación ni políticas RLS.
 
+La entrega posterior de alta de usuarios y archivos de despliegue pasó 45 pruebas Python y Ruff. Se volvió a comprobar el arranque HTTP con `PORT` y el rechazo de configuración inválida. Las llamadas administrativas se probaron con `httpx.MockTransport`; se comprobaron los permisos del rol de servicio mediante consulta en Supabase, pero no se ejecutó ninguna creación real de usuarios. El bloqueo pendiente es la falta de identidades reales y de una operación Auth Admin en la conexión disponible. La clave administrativa tampoco está configurada en el entorno.
+
 ## Límites de esta validación
 
 La comprobación de pantallas construye controles con la versión instalada de Flet; no equivale a una revisión visual de píxeles. El navegador de revisión no pudo abrir la dirección local de este entorno. Se verificaron por separado el arranque HTTP y la construcción de los controles.
@@ -31,5 +34,7 @@ La comprobación de pantallas construye controles con la versión instalada de F
 Las políticas se probaron en un PostgreSQL aislado con esquemas Auth y Storage mínimos; la API real se comprobó como cliente anónimo. Faltan pruebas integrales con usuarios municipales reales, cargas y descargas desde dispositivos reales, accesibilidad con lectores de pantalla, concurrencia bajo carga y restauración de respaldos.
 
 No se compilaron APK, instaladores Windows/Linux ni paquetes iOS/macOS. No se publicó la aplicación web. Las capacidades de despliegue y empaquetado están documentadas, no certificadas para todos los destinos.
+
+Dockerfile y Compose están preparados; su construcción no se ejecutó porque el entorno no dispone de Docker. La comprobación HTTP corresponde al proceso Python, no a una imagen construida.
 
 El historial de pruebas SQL se ejecuta dentro de una transacción con rollback. Los scripts de bootstrap son únicamente para bases locales de pruebas. El workflow del repositorio repetirá las comprobaciones en PostgreSQL 17.

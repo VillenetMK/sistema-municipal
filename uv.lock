@@ -465,6 +465,9 @@ dependencies = [
 desktop = [
     { name = "flet-desktop" },
 ]
+server = [
+    { name = "flet-web" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -478,10 +481,11 @@ dev = [
 requires-dist = [
     { name = "flet", specifier = "==1.0.0" },
     { name = "flet-desktop", marker = "extra == 'desktop'", specifier = "==1.0.0" },
+    { name = "flet-web", marker = "extra == 'server'", specifier = "==1.0.0" },
     { name = "httpx", extras = ["socks"], specifier = "==0.28.1" },
     { name = "python-dotenv", specifier = "==1.1.1" },
 ]
-provides-extras = ["desktop"]
+provides-extras = ["desktop", "server"]
 
 [package.metadata.requires-dev]
 dev = [

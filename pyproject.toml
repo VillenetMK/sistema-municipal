@@ -7,6 +7,7 @@ dependencies = ["flet==1.0.0", "httpx[socks]==0.28.1", "python-dotenv==1.1.1"]
 
 [project.optional-dependencies]
 desktop = ["flet-desktop==1.0.0"]
+server = ["flet-web==1.0.0"]
 
 [dependency-groups]
 dev = ["flet-cli==1.0.0", "flet-web==1.0.0", "pytest==8.4.2", "ruff==0.13.0"]
@@ -20,7 +21,7 @@ company = "MuniGest - Piloto municipal"
 path = "src"
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 testpaths = ["tests"]
 
 [tool.ruff]

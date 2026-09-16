@@ -32,6 +32,8 @@ Obtener la clave **publishable** desde las claves API del proyecto. No introduci
 
 La aplicación no crea administradores por orden de registro. Una cuenta de Supabase Auth, por sí sola, no concede acceso al sistema.
 
+Se incluye la herramienta `scripts/provision_staff.py` para crear una identidad y asignarle uno de los cuatro roles desde la terminal del operador, o para completar el perfil de una cuenta existente. Ver [alta de usuarios](USUARIOS.md). Requiere nombres y correos reales; no hay cuentas compartidas precargadas.
+
 1. Crear el usuario autorizado desde el panel de Supabase Auth, con su correo real y el mecanismo de acceso acordado con la entidad.
 2. En el editor SQL **del proyecto municipal**, sustituir el correo y el nombre en este bloque. Ejecutarlo una vez. No dejar los marcadores de ejemplo.
 
@@ -42,7 +44,8 @@ DECLARE
   target_department uuid;
 BEGIN
   SELECT id INTO target_user FROM auth.users
-    WHERE lower(email) = lower('TU_CORREO_INSTITUCIONAL');
+    WHERE lower(email) = lower('TU_CORREO_INSTITUCIONAL')
+      AND email_confirmed_at IS NOT NULL;
   IF target_user IS NULL THEN
     RAISE EXCEPTION 'Primero crea y verifica el usuario en Supabase Auth';
   END IF;
@@ -78,6 +81,8 @@ uv run python run.py --web --host 0.0.0.0 --port 8550
 ```
 
 El uso público necesita alojamiento Python, HTTPS y soporte de WebSocket. Esta entrega no despliega un servidor ni publica un dominio. La integración GitHub de Supabase aplica migraciones; no aloja la aplicación Flet.
+
+El repositorio incluye Dockerfile, Compose y una instalación sin dependencias de desarrollo para el servidor. Ver [despliegue](DESPLIEGUE.md).
 
 ## 6. Empaquetado nativo
 
