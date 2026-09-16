@@ -20,7 +20,7 @@ Usar:
 
 ```dotenv
 MUNIGEST_MODE=supabase
-MUNIGEST_NAME=MuniGest
+MUNIGEST_NAME=MuniGest Chiclayo
 SUPABASE_PROJECT_REF=lxvmwjcqdjoidgpinmgm
 SUPABASE_URL=https://lxvmwjcqdjoidgpinmgm.supabase.co
 SUPABASE_PUBLISHABLE_KEY=TU_CLAVE_PUBLICABLE
@@ -58,9 +58,11 @@ Para cada trabajador, crear su cuenta Auth y un `staff_profiles` con el rol y á
 
 ## 4. Datos institucionales
 
-Actualizar `municipal_settings` con el nombre real, ubigeo y `configured=true` una vez validados. Adaptar `departments` al organigrama. Mantener los códigos únicos y desactivar áreas antiguas sin borrar su historial. Incorporar a `procedures` únicamente trámites verificados: `is_official=true` exige una referencia normativa en `legal_basis`.
+La migración `chiclayo_institutional_configuration` carga el nombre de la Municipalidad Provincial de Chiclayo, sus fuentes públicas y quince destinos iniciales: catorce gerencias y Mesa de Partes como punto de recepción del piloto. La referencia genérica `AC` queda inactiva. Ver [configuración de Chiclayo](CHICLAYO.md).
 
-La opción Solicitud general es una referencia inicial. No tiene tarifa o plazo legal precargados. Los cambios de estos catálogos en v0.1 se realizan desde Supabase.
+Mantener `configured=false` hasta que los responsables municipales revisen las áreas, los usuarios y el catálogo para el piloto. Validar el ubigeo de la sede antes de asignarlo. Mantener los códigos únicos y desactivar áreas antiguas sin borrar su historial. Incorporar a `procedures` únicamente trámites verificados: `is_official=true` exige una referencia normativa en `legal_basis`.
+
+La opción Solicitud general es una referencia inicial. No tiene tarifa o plazo legal precargados. El enlace al TUPA 2026 permite consultar la fuente, pero no importa fichas. Los cambios de estos catálogos en v0.1 se realizan desde Supabase.
 
 ## 5. Ejecutar
 

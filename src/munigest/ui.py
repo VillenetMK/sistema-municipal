@@ -20,6 +20,7 @@ from munigest.domain import (
     export_cases,
     overdue,
 )
+from munigest.institution import INSTITUTION_NAME, OFFICIAL_RESOURCES, UNIT_TYPES
 from munigest.repository import SupabaseRepository
 
 INK = "#192A32"
@@ -85,7 +86,7 @@ class MunicipalApp:
         )
         self.profile = None
         self.departments = []
-        self.institution = "MuniGest"
+        self.institution = INSTITUTION_NAME
         self.screen = 0
         self.query = ""
         self.status = ""
@@ -180,8 +181,10 @@ class MunicipalApp:
         is_demo = self.settings.mode == "demo"
         form = [
             ft.Icon(ft.Icons.ACCOUNT_BALANCE_OUTLINED, size=40, color=ACCENT),
-            ft.Text("MuniGest", size=32, weight=ft.FontWeight.BOLD, color=INK),
+            ft.Text(self.settings.name, size=30, weight=ft.FontWeight.BOLD, color=INK),
+            ft.Text(INSTITUTION_NAME, size=16, color=INK),
             ft.Text("Cada solicitud, un recorrido claro.", size=17, color=MUTED),
+            small("Piloto de gestión interna"),
             ft.Container(height=8),
             ft.Text(
                 "Explora la mesa de partes" if is_demo else "Iniciar sesión",
@@ -260,7 +263,7 @@ class MunicipalApp:
         )
         self.page.appbar = ft.AppBar(
             leading=self.menu_button,
-            title=ft.Text("MuniGest", weight=ft.FontWeight.BOLD, color=INK),
+            title=ft.Text(self.settings.name, weight=ft.FontWeight.BOLD, color=INK),
             bgcolor="#FFFFFF",
             actions=[ft.IconButton(ft.Icons.LOGOUT, tooltip="Cerrar sesión", on_click=self.logout)],
         )
@@ -865,12 +868,32 @@ class MunicipalApp:
             ),
             panel(
                 [
+                    ft.Text(self.institution, size=20, weight=ft.FontWeight.W_600),
+                    small("Fuentes oficiales para orientar la atención"),
+                    *[
+                        ft.TextButton(label, icon=ft.Icons.OPEN_IN_NEW, url=url)
+                        for label, url in OFFICIAL_RESOURCES
+                    ],
+                    small(
+                        "Estos enlaces abren portales de la MPCH. Los registros del piloto "
+                        "todavía no se sincronizan con el SGD municipal."
+                    ),
+                ]
+            ),
+            panel(
+                [
                     ft.Text("Áreas disponibles", size=20, weight=ft.FontWeight.W_600),
+                    small(
+                        "Selección inicial de gerencias del organigrama publicado "
+                        "y un punto de recepción para el piloto."
+                    ),
                     *[
                         ft.ListTile(
                             leading=ft.Icon(ft.Icons.ACCOUNT_BALANCE_OUTLINED),
                             title=ft.Text(d["name"]),
-                            subtitle=ft.Text(d["code"]),
+                            subtitle=ft.Text(
+                                f"{d['code']} · {UNIT_TYPES.get(d.get('unit_type'), 'Área de referencia')}"
+                            ),
                         )
                         for d in self.departments
                     ],
@@ -887,7 +910,7 @@ class MunicipalApp:
                         ft.Text(item["requirements"]),
                         small(
                             item.get("legal_basis")
-                            or "Pendiente de incorporar el TUPA de la municipalidad."
+                            or "Catálogo pendiente de validación por la MPCH. Consulta el TUPA enlazado."
                         ),
                     ]
                 )

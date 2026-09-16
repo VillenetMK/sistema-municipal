@@ -12,11 +12,24 @@ from munigest.domain import (
     validate_draft,
     validate_transition,
 )
+from munigest.institution import (
+    DEPARTMENT_DEFINITIONS,
+    INSTITUTION_NAME,
+    ORGANIZATION_URL,
+    RECEPTION_URL,
+    SERVICES_URL,
+    TUPA_URL,
+)
 
 DEPARTMENTS = [
-    {"id": "10000000-0000-4000-8000-000000000001", "code": "MP", "name": "Mesa de Partes"},
-    {"id": "10000000-0000-4000-8000-000000000002", "code": "GM", "name": "Gerencia Municipal"},
-    {"id": "10000000-0000-4000-8000-000000000003", "code": "AC", "name": "Atención al Ciudadano"},
+    {
+        "id": f"10000000-0000-4000-8000-{index:012d}",
+        "code": code,
+        "name": name,
+        "unit_type": unit_type,
+        "source_url": RECEPTION_URL if code == "MP" else ORGANIZATION_URL,
+    }
+    for index, (code, name, unit_type) in enumerate(DEPARTMENT_DEFINITIONS, start=1)
 ]
 
 
@@ -32,22 +45,22 @@ class DemoRepository:
             self._seed()
 
     def _seed(self):
-        titles = [
-            "Solicitud de información sobre mantenimiento vial",
-            "Consulta sobre licencia de funcionamiento",
-            "Atención de incidencia en alumbrado público",
-            "Presentación de documentación complementaria",
-            "Solicitud de acceso a información pública",
-            "Petición de reunión con atención al ciudadano",
+        examples = [
+            ("Solicitud de información sobre una obra pública", "GIP"),
+            ("Consulta sobre licencia de funcionamiento", "GDEL"),
+            ("Consulta sobre recolección de residuos sólidos", "GDA"),
+            ("Presentación de documentación complementaria", "MP"),
+            ("Solicitud de acceso a información pública", "GSG"),
+            ("Consulta sobre programas sociales", "GDSPF"),
         ]
-        for index, title in enumerate(titles):
+        for index, (title, department_code) in enumerate(examples):
             draft = {
                 "title": title,
                 "description": "Solicitud ficticia para explorar el flujo de atención. No corresponde a una persona real.",
                 "document_type": "DNI",
                 "document_number": f"{index + 1:08d}",
                 "applicant_name": f"Solicitante de ejemplo {index + 1:02}",
-                "department_id": DEPARTMENTS[index % 3]["id"],
+                "department_id": next(d["id"] for d in DEPARTMENTS if d["code"] == department_code),
                 "priority": "alta" if index == 0 else "normal",
                 "channel": "presencial",
                 "due_on": str(date.today() + timedelta(days=index - 2)),
@@ -79,7 +92,14 @@ class DemoRepository:
         return copy.deepcopy(DEPARTMENTS)
 
     async def settings(self):
-        return {"institution_name": "Municipalidad · Demostración"}
+        return {
+            "institution_name": INSTITUTION_NAME,
+            "configured": False,
+            "official_website": SERVICES_URL,
+            "organization_source_url": ORGANIZATION_URL,
+            "tupa_source_url": TUPA_URL,
+            "sources_checked_on": "2026-09-16",
+        }
 
     async def procedures(self):
         return [

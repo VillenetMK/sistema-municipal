@@ -4,7 +4,7 @@
 
 Una municipalidad atiende solicitudes de vecinos y empresas, organiza servicios locales y gestiona áreas como desarrollo urbano, licencias, limpieza, seguridad ciudadana, atención social y administración. La distribución concreta de funciones cambia según la entidad y su tipo. Por eso MuniGest empieza con un proceso transversal: recibir, derivar y seguir expedientes.
 
-La entidad debe confirmar el distrito o provincia, su organigrama y el TUPA vigente. Los ejemplos consultados están enlazados en el README; no constituyen reglas normativas de la municipalidad que usará el sistema.
+La entidad indicada es la **Municipalidad Provincial de Chiclayo**. Se verificaron sus fuentes institucionales y sistemas existentes; ver [CHICLAYO.md](CHICLAYO.md). El organigrama publicado orienta los destinos iniciales y el TUPA enlazado sirve como referencia para validar las fichas con las áreas responsables.
 
 ## Flujo elegido
 
@@ -23,14 +23,14 @@ La entidad debe confirmar el distrito o provincia, su organigrama y el TUPA vige
 
 Aplicación interna para una municipalidad y una base de datos. No es un sistema multientidad. Un perfil de Mesa de Partes puede recibir y consultar todos los expedientes; los gestores y perfiles de consulta acceden a su área actual. Al derivar a otra área, el gestor anterior deja de tener acceso. Si la entidad necesita acceso histórico de las áreas participantes, se debe acordar y ampliar expresamente el modelo.
 
-Se han cargado tres áreas de referencia y una solicitud general. No se han cargado personas ni expedientes reales, ni procedimientos TUPA inventados. No hay comprobación automática de identidad ante RENIEC o SUNAT.
+Se cargaron catorce gerencias verificadas y un punto de recepción para el piloto, además de una solicitud general de referencia. No se han cargado personas ni expedientes reales, ni procedimientos TUPA inventados. No hay comprobación automática de identidad ante RENIEC o SUNAT. Los códigos internos no se sincronizan con el SGD de Chiclayo.
 
 ## Siguientes módulos elegidos
 
 | Prioridad | Módulo | Dependencia necesaria |
 |---|---|---|
-| 1 | Configuración institucional, catálogo TUPA y usuarios | Municipalidad y organigrama reales; responsables designados |
-| 2 | Portal ciudadano y constancias | Política de acceso, validación de identidad y procedimiento de recepción |
+| 1 | Validación del piloto, catálogo TUPA y usuarios | Identidad y gerencias iniciales cargadas; faltan responsables y revisión de fichas |
+| 2 | Integración con mesa de partes y SGD existentes | Contrato de API o exportación, mapeo de identificadores y flujo acordado con la MPCH |
 | 3 | Licencias y autorizaciones | TUPA vigente y flujos validados por las áreas |
 | 4 | Incidencias de servicios públicos | Responsables, territorios y reglas de atención |
 | 5 | Integraciones con recaudación y otros sistemas | Sistemas existentes y APIs autorizadas por la municipalidad |

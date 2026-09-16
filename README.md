@@ -1,6 +1,6 @@
-# MuniGest — Sistema Municipal
+# MuniGest Chiclayo
 
-Primera versión funcional para **mesa de partes y seguimiento interno de expedientes**. Aplicación escrita en Python, interfaz Flet y backend Supabase. Repositorio de trabajo: `VillenetMK/sistema-municipal`.
+Piloto para la **Municipalidad Provincial de Chiclayo**, orientado a mesa de partes y seguimiento interno de expedientes. Aplicación escrita en Python, interfaz Flet y backend Supabase. Repositorio de trabajo: `VillenetMK/sistema-municipal`.
 
 Un ciudadano presenta una solicitud; Mesa de Partes la registra; un área la revisa, observa o atiende; cada actuación queda en el historial. Es el núcleo sobre el que se pueden incorporar trámites especializados.
 
@@ -18,8 +18,12 @@ Un ciudadano presenta una solicitud; Mesa de Partes la registra; un área la rev
 - Exportación CSV de la página visible, sin documentos de identidad y con protección ante fórmulas.
 - Interfaz adaptable con navegación lateral en escritorio y menú en móvil; los estados siempre tienen texto.
 - Demostración con datos ficticios aislados por sesión, sin escribir en Supabase.
+- Identidad de Chiclayo, catorce gerencias verificadas y un punto de recepción para el piloto.
+- Referencias al organigrama y TUPA 2026, con accesos a los portales oficiales desde el catálogo.
 
-**Estado: base funcional para un piloto interno, versión 0.1.** Todavía requiere configurar la municipalidad, los usuarios autorizados y su TUPA antes de uso oficial. Los instaladores nativos aún deben compilarse y probarse en dispositivos reales. No se ha publicado un servicio web.
+**Estado: base funcional para un piloto interno, versión 0.1.** La identidad institucional está configurada; falta la validación municipal de responsables, áreas operativas y fichas TUPA. Los instaladores nativos aún deben compilarse y probarse en dispositivos reales. No se ha publicado un servicio web.
+
+Chiclayo ya dispone de mesa de partes virtual y SGD. Este piloto conserva registros internos y todavía no se sincroniza con esos servicios. Ver [configuración de Chiclayo, fuentes y alcance de la integración](docs/CHICLAYO.md).
 
 ## Ejecutar la demostración
 
@@ -75,6 +79,7 @@ src/munigest/domain.py        Validaciones y reglas del flujo
 src/munigest/repository.py    Sesiones, API y almacenamiento de Supabase
 src/munigest/demo.py          Demostración aislada
 src/munigest/config.py        Configuración y validación del proyecto
+src/munigest/institution.py   Identidad de Chiclayo y referencias públicas
 supabase/migrations/         Esquema, políticas RLS y operaciones transaccionales
 scripts/prepare_client.py    Configuración pública para paquetes nativos
 tests/                       Pruebas Python y contrato SQL
@@ -93,9 +98,10 @@ Ver [informe de validación](docs/VALIDACION.md), [alcance y decisiones](docs/AL
 
 ## Fuentes consultadas
 
-- [Mesa de partes de la Municipalidad de San Isidro](https://www.gob.pe/20823-municipalidad-distrital-de-san-isidro-lima-acceder-a-mesa-de-partes): ejemplo real de recepción de documentos.
-- [Trámites y servicios de San Isidro](https://www.gob.pe/institucion/munisanisidro-lima/tramites-y-servicios): mesa de partes, seguimiento y TUPA.
+- [Organigrama publicado de la MPCH](https://www.gob.pe/institucion/munichiclayo/informes-publicaciones/6924346-organigrama-2024) y [organización institucional](https://www.gob.pe/institucion/munichiclayo/organizacion): selección inicial de gerencias.
+- [TUPA 2026 de Chiclayo](https://www.gob.pe/institucion/munichiclayo/informes-publicaciones/7664214-texto-unico-de-procedimientos-administrativos-tupa-vigente-2026): referencia para validar las fichas de trámites.
+- [Servicios digitales de Chiclayo](https://www.munichiclayo.gob.pe/serviciosonline/): canales municipales existentes.
 - [Flet](https://flet.dev/docs/): interfaz Python para web, escritorio y móvil.
 - [Supabase: RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [seguridad de la API](https://supabase.com/docs/guides/api/securing-your-api) e [integración GitHub](https://supabase.com/docs/guides/deployment/branching/github-integration).
 
-Los ejemplos de otra entidad orientan el diseño; sus tarifas, requisitos y plazos no se trasladan a esta municipalidad.
+La revisión institucional se documenta en [CHICLAYO.md](docs/CHICLAYO.md). No se han precargado tarifas, requisitos ni plazos legales de trámites.

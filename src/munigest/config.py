@@ -8,6 +8,8 @@ from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
+from munigest.institution import APP_NAME
+
 try:
     from munigest._build_settings import CONFIG as BUILD_CONFIG
 except ModuleNotFoundError:
@@ -17,7 +19,7 @@ except ModuleNotFoundError:
 @dataclass(frozen=True)
 class Settings:
     mode: str = "demo"
-    name: str = "MuniGest"
+    name: str = APP_NAME
     project_ref: str = "lxvmwjcqdjoidgpinmgm"
     url: str = ""
     key: str = field(default="", repr=False)
@@ -31,7 +33,7 @@ class Settings:
 
         result = cls(
             mode=setting("MUNIGEST_MODE", "demo"),
-            name=setting("MUNIGEST_NAME", "MuniGest"),
+            name=setting("MUNIGEST_NAME", APP_NAME),
             project_ref=setting("SUPABASE_PROJECT_REF", "lxvmwjcqdjoidgpinmgm"),
             url=setting("SUPABASE_URL").rstrip("/"),
             key=setting("SUPABASE_PUBLISHABLE_KEY"),

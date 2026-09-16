@@ -13,8 +13,8 @@ dev = ["flet-cli==1.0.0", "flet-web==1.0.0", "pytest==8.4.2", "ruff==0.13.0"]
 
 [tool.flet]
 org = "pe.munigest"
-product = "MuniGest"
-company = "Sistema Municipal"
+product = "MuniGest Chiclayo"
+company = "MuniGest - Piloto municipal"
 
 [tool.flet.app]
 path = "src"
