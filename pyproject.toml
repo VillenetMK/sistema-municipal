@@ -1,0 +1,32 @@
+[project]
+name = "munigest"
+version = "0.1.0"
+description = "Mesa de partes y seguimiento interno de expedientes municipales"
+requires-python = ">=3.12,<3.14"
+dependencies = ["flet==1.0.0", "httpx[socks]==0.28.1", "python-dotenv==1.1.1"]
+
+[project.optional-dependencies]
+desktop = ["flet-desktop==1.0.0"]
+
+[dependency-groups]
+dev = ["flet-cli==1.0.0", "flet-web==1.0.0", "pytest==8.4.2", "ruff==0.13.0"]
+
+[tool.flet]
+org = "pe.munigest"
+product = "MuniGest"
+company = "Sistema Municipal"
+
+[tool.flet.app]
+path = "src"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
