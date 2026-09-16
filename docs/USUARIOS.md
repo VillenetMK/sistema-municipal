@@ -1,6 +1,6 @@
 # Alta de usuarios del piloto
 
-El alta utiliza las cuatro funciones ya implementadas. Cada trabajador recibe una cuenta individual; las credenciales se asignan a una persona identificada.
+El alta utiliza los cuatro roles ya implementados. Para uso operativo, cada trabajador recibe una cuenta individual asignada a una persona identificada.
 
 | Rol | Acceso en MuniGest | Área inicial sugerida para la prueba |
 |---|---|---|
@@ -11,9 +11,17 @@ El alta utiliza las cuatro funciones ya implementadas. Cada trabajador recibe un
 
 El rol `admin` de la aplicación no da acceso al panel de Supabase ni a su clave administrativa. La creación de identidades se realiza con la herramienta operativa descrita aquí o desde Supabase Auth. Las áreas sugeridas no designan a ningún funcionario real.
 
-## Datos necesarios
+## Cuentas de prueba creadas
 
-Para cada persona: nombre completo, correo real, rol y código de área. El catálogo de áreas está en [CHICLAYO.md](CHICLAYO.md). En el estado verificado de esta entrega no hay cuentas Auth ni perfiles de personal: todavía no se proporcionaron identidades reales.
+El 16 de septiembre de 2026 se crearon cuatro cuentas activas en el proyecto municipal: administrador en GTIE, mesa de partes en MP, gestor en GDU y consulta en GDU. Se comprobó el inicio de sesión de cada una y su perfil. Los nombres, correos y contraseñas de acceso se entregaron fuera del repositorio; no se distribuyen como credenciales predeterminadas del programa.
+
+Son identidades ficticias del piloto, sin relación con trabajadores municipales. Sus direcciones usan `.invalid` y no reciben mensajes ni recuperación de contraseña por correo. La confirmación administrativa permite probar el acceso, pero no acredita la titularidad de un buzón. Desactivar estos perfiles y retirar sus identidades Auth antes de incorporar información real, después de crear las cuentas individuales autorizadas.
+
+El alta utilizó la API administrativa de Auth mediante una función temporal limitada al proyecto y a estas cuatro cuentas. Al finalizar se sustituyó por una respuesta de operación cerrada; una llamada autenticada devuelve HTTP 410. No se insertaron identidades directamente en las tablas internas de Auth.
+
+## Datos necesarios para trabajadores
+
+Para cada persona: nombre completo, correo real, rol y código de área. El catálogo de áreas está en [CHICLAYO.md](CHICLAYO.md). Todavía no se proporcionaron identidades de trabajadores reales; las cuatro cuentas existentes son de prueba.
 
 ## Opción desde el panel de Supabase
 
@@ -21,7 +29,7 @@ Para cada persona: nombre completo, correo real, rol y código de área. El cat�
 2. Crear la cuenta con su correo real y contraseña individual, siguiendo el mecanismo de verificación acordado con la persona.
 3. Una vez confirmado el correo, asignar el perfil mediante la herramienta siguiente con `--user-id`, o mediante el bloque SQL de [puesta en marcha](PUESTA_EN_MARCHA.md).
 
-La conexión utilizada durante el desarrollo permite consultar la base y asignar perfiles a identidades existentes. No expone una operación para crear cuentas Auth. No se insertan identidades directamente en las tablas internas de autenticación.
+Para futuras altas, usar el panel de Supabase o la herramienta Python. La función temporal del piloto ya está cerrada.
 
 ## Herramienta Python de alta
 

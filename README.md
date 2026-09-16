@@ -54,10 +54,10 @@ El proyecto municipal es **`lxvmwjcqdjoidgpinmgm`**. Su esquema inicial ya fue a
 
 1. Copiar `.env.example` a `.env`.
 2. Configurar `MUNIGEST_MODE=supabase` y la clave **publishable** del proyecto.
-3. Crear el primer usuario en Supabase Auth y autorizar su perfil con las instrucciones de [puesta en marcha](docs/PUESTA_EN_MARCHA.md).
+3. Usar una de las cuentas de prueba ya entregadas para el piloto, o crear una cuenta individual siguiendo la [puesta en marcha](docs/PUESTA_EN_MARCHA.md).
 4. Ejecutar el programa y entrar con ese usuario.
 
-Para crear cuentas individuales de administrador, mesa de partes, gestor o consulta se incluye una [herramienta operativa de alta](docs/USUARIOS.md). El [despliegue del servidor](docs/DESPLIEGUE.md) incluye Dockerfile y Compose. Las cuentas reales y la publicación del servicio siguen pendientes de sus datos y acceso administrativo correspondientes.
+Se crearon y probaron cuatro cuentas del piloto, una por rol; sus credenciales se entregaron fuera del repositorio. Para crear cuentas de trabajadores identificados se incluye una [herramienta operativa de alta](docs/USUARIOS.md). El [despliegue del servidor](docs/DESPLIEGUE.md) incluye Dockerfile y Compose. Las cuentas de trabajadores reales y la publicación del servicio siguen pendientes.
 
 La aplicación no incluye claves secretas, contraseñas de base de datos ni credenciales `service_role`. Las sesiones se mantienen en memoria y se renuevan de forma asíncrona. Un fallo de conexión real nunca activa automáticamente la demostración.
 

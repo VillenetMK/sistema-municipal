@@ -32,7 +32,7 @@ Obtener la clave **publishable** desde las claves API del proyecto. No introduci
 
 La aplicación no crea administradores por orden de registro. Una cuenta de Supabase Auth, por sí sola, no concede acceso al sistema.
 
-Se incluye la herramienta `scripts/provision_staff.py` para crear una identidad y asignarle uno de los cuatro roles desde la terminal del operador, o para completar el perfil de una cuenta existente. Ver [alta de usuarios](USUARIOS.md). Requiere nombres y correos reales; no hay cuentas compartidas precargadas.
+El proyecto municipal ya tiene cuatro cuentas de prueba, una por rol, con credenciales entregadas fuera del repositorio. Ver sus límites en [alta de usuarios](USUARIOS.md). Para crear cuentas de trabajadores se incluye `scripts/provision_staff.py`: crea una identidad y asigna su perfil desde la terminal del operador, o completa el perfil de una cuenta existente. Requiere nombres y correos reales.
 
 1. Crear el usuario autorizado desde el panel de Supabase Auth, con su correo real y el mecanismo de acceso acordado con la entidad.
 2. En el editor SQL **del proyecto municipal**, sustituir el correo y el nombre en este bloque. Ejecutarlo una vez. No dejar los marcadores de ejemplo.
@@ -55,7 +55,7 @@ BEGIN
 END $$;
 ```
 
-No se ejecutó este bloque durante el desarrollo: el titular y la cuenta administrativa deben ser reales y estar identificados. No hay contraseñas de prueba ni usuarios privilegiados precargados.
+Este bloque es una alternativa para una cuenta individual identificada; no se utilizó para crear las cuentas de prueba. Las migraciones y el código no contienen contraseñas ni crean usuarios privilegiados automáticamente.
 
 Para cada trabajador, crear su cuenta Auth y un `staff_profiles` con el rol y área correspondientes. Los perfiles inactivos quedan bloqueados incluso si conservan un JWT todavía válido. La asignación de perfiles en esta primera versión se realiza desde Supabase, no desde una pantalla administrativa.
 
