@@ -94,9 +94,13 @@ Las instrucciones de compilación están en [puesta en marcha](docs/PUESTA_EN_MA
 
 ## Organización
 
+El módulo [Administración](docs/ADMINISTRACION.md) permite gestionar áreas, fichas de trámites y los roles, áreas y estados de cuentas existentes. Cada cambio conserva motivo y versiones anterior y posterior. Se muestra únicamente a administradores y la base vuelve a verificar el permiso en cada operación.
+
 ```text
 src/main.py                  Entrada del empaquetador Flet
 src/munigest/ui.py            Pantallas y navegación
+src/munigest/admin_ui.py      Administración de catálogos y perfiles
+src/munigest/administration.py Validaciones de Administración
 src/munigest/domain.py        Validaciones y reglas del flujo
 src/munigest/repository.py    Sesiones, API y almacenamiento de Supabase
 src/munigest/demo.py          Demostración aislada
@@ -115,7 +119,7 @@ uv run pytest -q
 uv run ruff check src tests scripts run.py
 ```
 
-El workflow de GitHub comprueba Python y ejecuta el contrato de permisos sobre PostgreSQL 17 aislado. `tests/bootstrap_database.sql` y `tests/database_contract.sql` son exclusivamente para bases locales de prueba; no se ejecutan sobre la base municipal.
+El workflow de GitHub comprueba Python y ejecuta los contratos de permisos sobre PostgreSQL 17 aislado. Los scripts SQL de `tests/` son exclusivamente para bases locales de prueba; no se ejecutan sobre la base municipal.
 
 Ver [informe de validación](docs/VALIDACION.md), [alcance y decisiones](docs/ALCANCE.md) y [modelo de seguridad](docs/SEGURIDAD.md).
 

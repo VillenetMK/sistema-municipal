@@ -9,7 +9,14 @@ from uuid import uuid4
 
 import httpx
 
-from munigest.domain import SessionExpired, UserError, validate_attachment, validate_draft
+from munigest.administration import validate_admin_record
+from munigest.domain import (
+    SessionExpired,
+    UserError,
+    clean_text,
+    validate_attachment,
+    validate_draft,
+)
 
 
 class SupabaseRepository:
@@ -175,6 +182,45 @@ class SupabaseRepository:
             )
         ).json()
         return rows[0] if rows else {"institution_name": "Municipalidad por configurar"}
+
+    async def admin_records(self, entity, query="", offset=0):
+        return (
+            await self._request(
+                "POST",
+                "/rest/v1/rpc/admin_list_records",
+                json={"entity": entity, "search_text": query, "start_index": offset},
+            )
+        ).json()
+
+    async def admin_save(self, entity, raw, version, reason):
+        payload = validate_admin_record(entity, raw)
+        return (
+            await self._request(
+                "POST",
+                "/rest/v1/rpc/admin_save_record",
+                json={
+                    "entity": entity,
+                    "payload": payload,
+                    "expected_version": version,
+                    "reason": clean_text(reason, "Motivo", 10, 500),
+                },
+            )
+        ).json()
+
+    async def admin_history(self, entity, record_id):
+        return (
+            await self._request(
+                "GET",
+                "/rest/v1/admin_events",
+                params={
+                    "select": "*",
+                    "entity": f"eq.{entity}",
+                    "record_id": f"eq.{record_id}",
+                    "order": "id.desc",
+                    "limit": "25",
+                },
+            )
+        ).json()
 
     async def metrics(self):
         return (await self._request("POST", "/rest/v1/rpc/case_metrics", json={})).json()

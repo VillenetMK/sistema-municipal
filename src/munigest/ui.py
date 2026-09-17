@@ -94,6 +94,7 @@ class MunicipalApp:
         self.rows = []
         self.sidebar = None
         self.menu_button = None
+        self.admin_screen = None
         self.content = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO, spacing=20)
         self.picker = ft.FilePicker()
         page.title = settings.name
@@ -142,6 +143,7 @@ class MunicipalApp:
             self.page.update()
 
     def login(self):
+        self.admin_screen = None
         self.page.appbar = None
         self.page.drawer = None
         self.page.controls.clear()
@@ -278,8 +280,15 @@ class MunicipalApp:
             await self.page.close_drawer()
             await self.guard(lambda: self.navigate(e.control.selected_index))
 
+        navigation = NAV + (
+            [("Administración", ft.Icons.SETTINGS_OUTLINED)]
+            if self.profile["role"] == "admin"
+            else []
+        )
         self.page.drawer = ft.NavigationDrawer(
-            controls=[ft.NavigationDrawerDestination(label=name, icon=icon) for name, icon in NAV],
+            controls=[
+                ft.NavigationDrawerDestination(label=name, icon=icon) for name, icon in navigation
+            ],
             on_change=drawer_change,
         )
         nav_controls = [
@@ -289,7 +298,7 @@ class MunicipalApp:
         ]
         nav_controls += [
             ft.TextButton(name, icon=icon, on_click=self.nav_handler(i), width=208, height=48)
-            for i, (name, icon) in enumerate(NAV)
+            for i, (name, icon) in enumerate(navigation)
         ]
         nav_controls += [
             ft.Container(expand=True),
@@ -342,6 +351,8 @@ class MunicipalApp:
         )
 
     async def navigate(self, index):
+        if index == 3 and (not self.profile or self.profile["role"] != "admin"):
+            raise UserError("Solo un administrador puede abrir Administración.")
         self.screen = index
         if self.page.drawer:
             self.page.drawer.selected_index = index
@@ -351,12 +362,22 @@ class MunicipalApp:
             await self.dashboard()
         elif index == 1:
             await self.inbox()
-        else:
+        elif index == 2:
             await self.catalog()
+        elif index == 3:
+            from munigest.admin_ui import AdministrationScreen
+
+            if self.admin_screen is None:
+                self.admin_screen = AdministrationScreen(self)
+            await self.admin_screen.show()
         self.page.update()
 
     async def new_handler(self, _):
-        self.new_case()
+        async def work():
+            self.departments = await self.repo.departments()
+            self.new_case()
+
+        await self.guard(work)
 
     def can_register(self):
         return self.profile["role"] in {"admin", "mesa_partes"}
@@ -861,7 +882,9 @@ class MunicipalApp:
         self.page.update()
 
     async def catalog(self):
-        procedures = await self.repo.procedures()
+        procedures, self.departments = await asyncio.gather(
+            self.repo.procedures(), self.repo.departments()
+        )
         controls = [
             self.heading(
                 "Áreas y trámites",
@@ -903,12 +926,34 @@ class MunicipalApp:
             ft.Text("Catálogo de trámites", size=20, weight=ft.FontWeight.W_600),
         ]
         for item in procedures:
+            department = next(
+                (d["name"] for d in self.departments if d["id"] == item.get("department_id")),
+                "Sin área asignada",
+            )
+            fee = (
+                f"S/ {float(item['fee_pen']):,.2f}"
+                if item.get("fee_pen") is not None
+                else "Sin importe registrado"
+            )
+            deadline = (
+                f"{item['deadline_days']} días"
+                if item.get("deadline_days") is not None
+                else "Sin plazo registrado"
+            )
             controls.append(
                 panel(
                     [
                         ft.Text(item["name"], size=18, weight=ft.FontWeight.W_600),
-                        pill("TUPA validado" if item["is_official"] else "Referencia general"),
+                        pill(
+                            "Ficha oficial registrada"
+                            if item["is_official"]
+                            else "Referencia general"
+                        ),
                         ft.Text(item["requirements"]),
+                        small(f"{department} · {fee} · {deadline}"),
+                        small(
+                            "Datos de la ficha: consulta el sustento antes de utilizarlos. No generan cobros ni vencimientos automáticos."
+                        ),
                         small(
                             item.get("legal_basis")
                             or "Catálogo pendiente de validación por la MPCH. Consulta el TUPA enlazado."

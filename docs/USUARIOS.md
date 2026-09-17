@@ -11,6 +11,8 @@ El alta utiliza los cuatro roles ya implementados. Para uso operativo, cada trab
 
 El rol `admin` de la aplicación no da acceso al panel de Supabase ni a su clave administrativa. La creación de identidades se realiza con la herramienta operativa descrita aquí o desde Supabase Auth. Las áreas sugeridas no designan a ningún funcionario real.
 
+Para modificar perfiles existentes, entrar en **Administración → Personal → Editar e historial**. Allí se cambia nombre, rol, área o estado, registrando un motivo. Ver [Administración](ADMINISTRACION.md). Las cuentas nuevas siguen el procedimiento de alta de este documento.
+
 ## Cuentas de prueba creadas
 
 El 16 de septiembre de 2026 se crearon cuatro cuentas activas en el proyecto municipal: administrador en GTIE, mesa de partes en MP, gestor en GDU y consulta en GDU. Se comprobó el inicio de sesión de cada una y su perfil. Las contraseñas de acceso se entregaron fuera del repositorio; no se distribuyen como credenciales predeterminadas del programa.

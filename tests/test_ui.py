@@ -25,6 +25,9 @@ class PageStub:
     def update(self):
         pass
 
+    def show_dialog(self, dialog):
+        self.last_dialog = dialog
+
     async def show_drawer(self):
         self.drawer_open = True
 
@@ -59,7 +62,7 @@ def test_all_screens_build_at_desktop_and_mobile_widths(seeded):
             app.profile = await app.repo.sign_in()
             app.departments = await app.repo.departments()
             app.shell()
-            for screen in [0, 1, 2]:
+            for screen in [0, 1, 2, 3]:
                 if width < 850:
                     assert asyncio.iscoroutinefunction(app.menu_button.on_click)
                     await app.menu_button.on_click(None)
@@ -72,6 +75,17 @@ def test_all_screens_build_at_desktop_and_mobile_widths(seeded):
                 assert app.screen == screen
                 assert app.content.controls
                 assert_valid_wrapping_layout(app.content)
+            for entity in ["departments", "procedures", "staff_profiles"]:
+                admin = app.admin_screen
+                admin.entity = entity
+                await admin.show()
+                assert_valid_wrapping_layout(app.content)
+                records = await app.repo.admin_records(entity)
+                await admin.editor(records[0])
+                assert_valid_wrapping_layout(app.content)
+                if entity != "staff_profiles":
+                    await admin.editor()
+                    assert_valid_wrapping_layout(app.content)
             app.new_case()
             assert_valid_wrapping_layout(app.content)
             cases = await app.repo.list_cases()
