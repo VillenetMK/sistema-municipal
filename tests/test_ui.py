@@ -1,6 +1,9 @@
 import asyncio
 from types import SimpleNamespace
 
+import flet as ft
+import pytest
+
 from munigest.config import Settings
 from munigest.demo import DemoRepository
 from munigest.ui import MunicipalApp
@@ -29,13 +32,30 @@ class PageStub:
         self.drawer_open = False
 
 
-def test_all_screens_build_at_desktop_and_mobile_widths():
+def assert_valid_wrapping_layout(control):
+    """Flutter Wrap no admite los Expanded/Flexible de una fila o columna Flex."""
+    children = list(getattr(control, "controls", []))
+    if isinstance(control, (ft.Row, ft.Column)) and control.wrap:
+        assert not any(getattr(child, "expand", False) for child in children), (
+            "Un control expandido dentro de wrap=True impide dibujar la pantalla."
+        )
+    content = getattr(control, "content", None)
+    if isinstance(content, ft.Control):
+        children.append(content)
+    for child in children:
+        assert_valid_wrapping_layout(child)
+
+
+@pytest.mark.parametrize("seeded", [False, True], ids=["sin-expedientes", "con-expedientes"])
+def test_all_screens_build_at_desktop_and_mobile_widths(seeded):
     async def exercise():
         for width in [390, 1280]:
             page = PageStub()
             page.width = width
-            app = MunicipalApp(page, Settings(), DemoRepository())
+            app = MunicipalApp(page, Settings(), DemoRepository(seeded=seeded))
             app.login()
+            for control in page.controls:
+                assert_valid_wrapping_layout(control)
             app.profile = await app.repo.sign_in()
             app.departments = await app.repo.departments()
             app.shell()
@@ -51,9 +71,13 @@ def test_all_screens_build_at_desktop_and_mobile_widths():
                 assert not page.drawer_open
                 assert app.screen == screen
                 assert app.content.controls
+                assert_valid_wrapping_layout(app.content)
             app.new_case()
-            case = (await app.repo.list_cases())[0]
-            await app.detail(case["id"])
+            assert_valid_wrapping_layout(app.content)
+            cases = await app.repo.list_cases()
+            if cases:
+                await app.detail(cases[0]["id"])
+                assert_valid_wrapping_layout(app.content)
             app.resize()
             assert app.sidebar.visible == (width >= 850)
             await app.close()

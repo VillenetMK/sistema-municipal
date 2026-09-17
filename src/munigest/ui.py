@@ -332,10 +332,7 @@ class MunicipalApp:
     def heading(self, title, subtitle, actions=None):
         return ft.Column(
             [
-                ft.Row(
-                    [ft.Text(title, size=28, weight=ft.FontWeight.BOLD, color=INK, expand=True)],
-                    wrap=True,
-                ),
+                ft.Text(title, size=28, weight=ft.FontWeight.BOLD, color=INK),
                 small(subtitle),
                 ft.Row(actions or [], wrap=True, spacing=10),
             ],
@@ -443,10 +440,10 @@ class MunicipalApp:
                                 item["reference"],
                                 weight=ft.FontWeight.BOLD,
                                 color=ACCENT,
-                                expand=True,
                             ),
                             small(timestamp(item["created_at"])),
                         ],
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                         wrap=True,
                     ),
                     ft.Text(item["title"], size=17, weight=ft.FontWeight.W_600, color=INK),
@@ -481,7 +478,6 @@ class MunicipalApp:
             value=self.query,
             prefix_icon=ft.Icons.SEARCH,
             max_length=60,
-            expand=True,
         )
         status = ft.Dropdown(
             label="Estado",
@@ -533,7 +529,7 @@ class MunicipalApp:
                 "Consulta, deriva y registra las actuaciones de cada solicitud.",
                 actions,
             ),
-            ft.Row([search], wrap=True),
+            search,
             ft.Row(
                 [status, ft.Button("Buscar", icon=ft.Icons.SEARCH, on_click=apply_filter)],
                 wrap=True,
@@ -767,7 +763,6 @@ class MunicipalApp:
                             expand=True,
                         ),
                     ],
-                    wrap=True,
                 ),
                 small(f"{timestamp(event['created_at'])} · {event['actor_name']}"),
                 ft.Text(event["note"], selectable=True),

@@ -1,14 +1,16 @@
 # Validación de la versión 0.1
 
 Fecha: 16 de septiembre de 2026.
+Última actualización: 17 de septiembre de 2026.
 
 ## Resultados comprobados
 
 | Comprobación | Resultado |
 |---|---|
-| Pruebas Python | 45 aprobadas: 31 originales y 14 de alta administrativa |
+| Pruebas Python | 46 aprobadas, incluidas las variantes de interfaz con y sin expedientes |
 | Análisis estático Ruff | Sin errores |
 | Construcción de las pantallas | Login, resumen, bandeja, registro, detalle y catálogo; anchos 390 y 1280 |
+| Composición de filas y columnas | Ningún hijo expandido dentro de un contenedor con `wrap=True` en las pantallas comprobadas |
 | Arranque del servidor Flet | HTTP 200 usando PORT; configuración inválida rechazada antes del arranque |
 | Herramienta Python de alta | API simulada: cuatro roles, aislamiento de proyecto, correos confirmados, reanudación, permisos existentes y fallos parciales |
 | Cuentas del piloto en Supabase real | Cuatro creadas mediante Auth Admin; inicio de sesión, perfil activo, rol y área comprobados para cada una |
@@ -35,6 +37,8 @@ Después se crearon cuatro identidades ficticias del piloto mediante una funció
 El asesor de seguridad actual informa `auth_leaked_password_protection`: la protección contra contraseñas filtradas está desactivada. La organización usa el plan Free y esta función requiere Pro o superior, según la [documentación de seguridad de contraseñas](https://supabase.com/docs/guides/auth/password-security). No se cambió el plan. Las cuentas del piloto usan contraseñas aleatorias independientes y deben retirarse antes del uso con información real.
 
 ## Límites de esta validación
+
+El 17 de septiembre se corrigió el panel vacío después del acceso: los encabezados, las tarjetas, la búsqueda y el historial mezclaban `wrap=True` con hijos `expand=True`. En Flet 1.0.0, [Row usa Wrap al activar el salto de línea](https://github.com/flet-dev/flet/blob/v1.0.0/packages/flet/lib/src/controls/row.dart) y [el control expandido requiere un padre Flex](https://github.com/flet-dev/flet/blob/v1.0.0/packages/flet/lib/src/controls/base_controls.dart). Se eliminaron las combinaciones incompatibles conservando el ajuste del texto. La prueba de regresión falló antes del cambio con ambos conjuntos de datos y pasó después; también pasaron las 46 pruebas Python y Ruff. El navegador de revisión bloqueó la dirección local, por lo que queda pendiente confirmar visualmente esta corrección en Windows.
 
 La comprobación de pantallas construye controles con la versión instalada de Flet; no equivale a una revisión visual de píxeles. El navegador de revisión no pudo abrir la dirección local de este entorno. Se verificaron por separado el arranque HTTP y la construcción de los controles.
 
