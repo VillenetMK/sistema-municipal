@@ -1,7 +1,7 @@
 """Demostración aislada en memoria. Nunca escribe datos ficticios en Supabase."""
 
 import copy
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 from munigest.administration import ENTITIES, validate_admin_record
@@ -9,8 +9,10 @@ from munigest.domain import (
     STATUSES,
     UserError,
     clean_text,
+    municipal_today,
     overdue,
     validate_attachment,
+    validate_case_work,
     validate_draft,
     validate_transition,
 )
@@ -22,6 +24,7 @@ from munigest.institution import (
     SERVICES_URL,
     TUPA_URL,
 )
+from munigest.work_queue import eligible_workers, matches_filters
 
 DEPARTMENTS = [
     {
@@ -94,7 +97,7 @@ class DemoRepository:
                 "department_id": next(d["id"] for d in DEPARTMENTS if d["code"] == department_code),
                 "priority": "alta" if index == 0 else "normal",
                 "channel": "presencial",
-                "due_on": str(date.today() + timedelta(days=index - 2)),
+                "due_on": str(municipal_today() + timedelta(days=index - 2)),
                 "request_id": str(uuid4()),
                 "email": "",
                 "phone": "",
@@ -113,8 +116,8 @@ class DemoRepository:
     async def close(self):
         await self.sign_out()
 
-    async def departments(self):
-        return copy.deepcopy([d for d in self._departments if d["is_active"]])
+    async def departments(self, include_inactive=False):
+        return copy.deepcopy([d for d in self._departments if include_inactive or d["is_active"]])
 
     async def settings(self):
         return {
@@ -126,8 +129,11 @@ class DemoRepository:
             "sources_checked_on": "2026-09-16",
         }
 
-    async def procedures(self):
-        return copy.deepcopy([p for p in self._procedures if p["is_active"]])
+    async def procedures(self, include_inactive=False):
+        return copy.deepcopy([p for p in self._procedures if include_inactive or p["is_active"]])
+
+    async def staff_directory(self):
+        return copy.deepcopy(self._staff_profiles)
 
     def _admin_actor(self):
         actor = next(
@@ -205,6 +211,20 @@ class DemoRepository:
                     "Esta área conserva expedientes sin archivar. Derívalos o concluye su archivo."
                 )
         result = {**(old or {}), **data, "version": version + 1}
+        if (
+            entity == "staff_profiles"
+            and old
+            and (
+                not data["is_active"]
+                or data["role"] == "consulta"
+                or data["department_id"] != old["department_id"]
+            )
+            and any(
+                c.get("assigned_to") == data[key] and c["status"] not in {"atendido", "archivado"}
+                for c in self._cases.values()
+            )
+        ):
+            raise UserError("Reasigna o libera primero los expedientes pendientes de esta persona.")
         self._admin_events.append(
             {
                 "id": len(self._admin_events) + 1,
@@ -243,34 +263,78 @@ class DemoRepository:
             "resolved": sum(c["status"] in {"atendido", "archivado"} for c in values),
         }
 
-    async def list_cases(self, query="", status="", offset=0, limit=51):
+    async def list_cases(self, query="", status="", offset=0, limit=51, *, filters=None):
         rows = [
             x
             for x in self._cases.values()
             if (not status or x["status"] == status)
             and (not query or query.casefold() in (x["reference"] + " " + x["title"]).casefold())
+            and matches_filters(x, filters, (self.profile or {}).get("user_id"))
         ]
         rows.sort(key=lambda x: (x["created_at"], x["id"]), reverse=True)
-        return copy.deepcopy(rows[offset : offset + limit])
+        return [self._with_assignee(c) for c in rows[offset : offset + limit]]
 
     async def get_case(self, case_id):
-        return copy.deepcopy(self._cases[case_id])
+        return self._with_assignee(self._cases[case_id])
+
+    def _with_assignee(self, case):
+        result = copy.deepcopy(case)
+        result["assignee"] = copy.deepcopy(
+            next((s for s in self._staff_profiles if s["user_id"] == case.get("assigned_to")), None)
+        )
+        return result
+
+    def _work_snapshot(self, case):
+        fields = {
+            k: copy.deepcopy(case.get(k))
+            for k in ("procedure_id", "procedure_snapshot", "assigned_to", "priority", "due_on")
+        }
+        fields["assignee_name"] = (self._with_assignee(case)["assignee"] or {}).get("display_name")
+        return fields
+
+    def _check_assignee(self, assignee_id, department_id):
+        if assignee_id and not any(
+            s["user_id"] == assignee_id
+            for s in eligible_workers(self._staff_profiles, department_id)
+        ):
+            raise UserError(
+                "El responsable debe ser una persona activa con permiso de atención en esta área."
+            )
 
     async def events(self, case_id):
         return copy.deepcopy(list(reversed(self._events[case_id])))
 
     def _create(self, draft):
+        procedure = next(
+            (
+                p
+                for p in self._procedures
+                if p["is_active"]
+                and (
+                    p["id"] == draft.get("procedure_id")
+                    if draft.get("procedure_id")
+                    else p["code"] == "GENERAL"
+                )
+            ),
+            None,
+        )
+        if not procedure:
+            raise UserError("Selecciona un trámite activo del catálogo.")
+        self._check_assignee(draft.get("assigned_to"), draft["department_id"])
         self._counter += 1
         now = datetime.now(UTC).isoformat()
         case_id = str(uuid4())
         item = {
             "id": case_id,
-            "reference": f"DEMO-{date.today().year}-{self._counter:06d}",
+            "reference": f"DEMO-{municipal_today().year}-{self._counter:06d}",
             "status": "recibido",
             "version": 1,
             "created_at": now,
             "updated_at": now,
             **draft,
+            "procedure_id": procedure["id"],
+            "procedure_snapshot": copy.deepcopy(procedure),
+            "assigned_to": draft.get("assigned_to"),
             "department": next(x for x in self._departments if x["id"] == draft["department_id"]),
             "applicant": {
                 "full_name": draft["applicant_name"],
@@ -288,6 +352,7 @@ class DemoRepository:
                 "actor_name": "Operador de demostración",
                 "note": "Solicitud registrada en modo demostración.",
                 "to_status": "recibido",
+                "work_after": self._work_snapshot(item),
             }
         ]
         self._documents[case_id] = []
@@ -320,6 +385,9 @@ class DemoRepository:
         )
         if department is None:
             raise UserError("Área de destino inválida.")
+        before = self._work_snapshot(current)
+        if department_id != current["department_id"]:
+            current["assigned_to"] = None
         self._events[current["id"]].append(
             {
                 "created_at": datetime.now(UTC).isoformat(),
@@ -328,6 +396,8 @@ class DemoRepository:
                 "note": note,
                 "from_status": current["status"],
                 "to_status": target,
+                "work_before": before,
+                "work_after": self._work_snapshot(current),
             }
         )
         current.update(
@@ -337,6 +407,57 @@ class DemoRepository:
             version=current["version"] + 1,
         )
         return copy.deepcopy(current)
+
+    async def set_case_work(self, case, raw):
+        actor = next(
+            (
+                s
+                for s in self._staff_profiles
+                if self.profile and s["user_id"] == self.profile["user_id"]
+            ),
+            None,
+        )
+        current = self._cases[case["id"]]
+        if not actor or not actor["is_active"] or actor["role"] == "consulta":
+            raise UserError("Tu perfil no puede organizar expedientes.")
+        if actor["role"] == "gestor" and actor["department_id"] != current["department_id"]:
+            raise UserError("El expediente no está disponible para tu área.")
+        if current["status"] in {"atendido", "archivado"}:
+            raise UserError("El expediente ya está cerrado para organización.")
+        if case["version"] != current["version"]:
+            raise UserError("Otro usuario modificó el expediente. Actualiza antes de continuar.")
+        data = validate_case_work(raw)
+        note = data.pop("note")
+        before = self._work_snapshot(current)
+        if all(current.get(k) == v for k, v in data.items()):
+            raise UserError(
+                "Modifica el trámite, responsable, prioridad o fecha objetivo antes de guardar."
+            )
+        if data["procedure_id"] != current.get("procedure_id"):
+            procedure = next(
+                (p for p in self._procedures if p["id"] == data["procedure_id"] and p["is_active"]),
+                None,
+            )
+            if not procedure:
+                raise UserError("Selecciona un trámite activo del catálogo.")
+            data["procedure_snapshot"] = copy.deepcopy(procedure)
+        if data["assigned_to"] != current.get("assigned_to"):
+            self._check_assignee(data["assigned_to"], current["department_id"])
+        current.update(
+            data, version=current["version"] + 1, updated_at=datetime.now(UTC).isoformat()
+        )
+        self._events[current["id"]].append(
+            {
+                "action": "organización",
+                "actor_name": actor["display_name"],
+                "to_status": current["status"],
+                "created_at": datetime.now(UTC).isoformat(),
+                "note": note,
+                "work_before": before,
+                "work_after": self._work_snapshot(current),
+            }
+        )
+        return self._with_assignee(current)
 
     async def documents(self, case_id):
         return [{k: v for k, v in x.items() if k != "content"} for x in self._documents[case_id]]

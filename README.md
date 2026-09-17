@@ -9,13 +9,14 @@ Un ciudadano presenta una solicitud; Mesa de Partes la registra; un área la rev
 - Inicio de sesión con Supabase Auth y autorización mediante perfiles municipales activos.
 - Roles: administrador, mesa de partes, gestor de área y consulta.
 - Resumen de expedientes pendientes, atendidos y con fecha objetivo interna vencida.
-- Registro de solicitante, asunto, descripción, canal, prioridad y área de destino.
+- Registro de solicitante, asunto, descripción, canal, prioridad, trámite, área de destino y responsable opcional.
+- Copia histórica de la ficha del trámite; cambios de responsable, prioridad y fecha objetivo con motivo e historial.
 - Numeración anual transaccional, registro idempotente y control de versiones para evitar sobrescrituras.
-- Búsqueda por código/asunto, filtros por estado y paginación.
-- Derivación entre áreas; estados recibido, en revisión, observado, atendido y archivado.
+- Bandeja con Mis pendientes, Sin responsable y Objetivo hoy; filtros por estado, área, trámite, responsable, prioridad, ingreso y objetivo interno, con paginación.
+- Derivación entre áreas que libera al responsable anterior; estados recibido, en revisión, observado, atendido y archivado.
 - Historial generado en servidor e inmodificable desde los clientes.
 - Adjuntos privados PDF, PNG y JPEG, hasta 10 MB; verificación de firma de formato y SHA-256 al descargar.
-- Exportación CSV de la página visible, sin documentos de identidad y con protección ante fórmulas.
+- Exportación CSV de la página visible, con trámite y responsable, sin documentos de identidad y con protección ante fórmulas.
 - Interfaz adaptable con navegación lateral en escritorio y menú en móvil; los estados siempre tienen texto.
 - Demostración con datos ficticios aislados por sesión, sin escribir en Supabase.
 - Identidad de Chiclayo, catorce gerencias verificadas y un punto de recepción para el piloto.
@@ -96,11 +97,15 @@ Las instrucciones de compilación están en [puesta en marcha](docs/PUESTA_EN_MA
 
 El módulo [Administración](docs/ADMINISTRACION.md) permite gestionar áreas, fichas de trámites y los roles, áreas y estados de cuentas existentes. Cada cambio conserva motivo y versiones anterior y posterior. Se muestra únicamente a administradores y la base vuelve a verificar el permiso en cada operación.
 
+La guía de [expedientes y bandeja de trabajo](docs/EXPEDIENTES.md) explica cómo vincular trámites, asignar responsables y organizar pendientes.
+
 ```text
 src/main.py                  Entrada del empaquetador Flet
 src/munigest/ui.py            Pantallas y navegación
 src/munigest/admin_ui.py      Administración de catálogos y perfiles
 src/munigest/administration.py Validaciones de Administración
+src/munigest/work_ui.py       Bandeja y organización de expedientes
+src/munigest/work_queue.py    Filtros y fechas objetivo internas
 src/munigest/domain.py        Validaciones y reglas del flujo
 src/munigest/repository.py    Sesiones, API y almacenamiento de Supabase
 src/munigest/demo.py          Demostración aislada

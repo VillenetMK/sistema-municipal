@@ -7,7 +7,7 @@ Fecha: 16 de septiembre de 2026.
 
 | Comprobación | Resultado |
 |---|---|
-| Pruebas Python | 62 aprobadas, incluidas Administración, variantes de interfaz con y sin expedientes y acceso mediante alias |
+| Pruebas Python | 80 aprobadas, incluidas asignación, filtros de fechas, recorrido completo de interfaz, Administración y acceso mediante alias |
 | Análisis estático Ruff | Sin errores |
 | Construcción de las pantallas | Login, resumen, bandeja, registro, detalle, catálogo y Administración (listas y formularios); anchos 390 y 1280 |
 | Composición de filas y columnas | Ningún hijo expandido dentro de un contenedor con `wrap=True` en las pantallas comprobadas |
@@ -16,14 +16,15 @@ Fecha: 16 de septiembre de 2026.
 | Cuentas del piloto en Supabase real | Cuatro creadas mediante Auth Admin; inicio de sesión, perfil activo, rol y área comprobados para cada una |
 | Restricción de edición de perfiles | La cuenta de consulta recibió HTTP 403 al intentar una actualización directa |
 | Cierre de la función temporal de alta | HTTP 410 con sesión autenticada tras sustituirla por una respuesta de operación cerrada |
-| Esquema SQL en PostgreSQL aislado (PGlite) | Las cuatro migraciones aplicadas correctamente, incluidas Chiclayo y Administración |
+| Esquema SQL en PostgreSQL aislado (PGlite) | Las cinco migraciones aplicadas correctamente, incluidas Administración y organización del trabajo |
 | Contrato SQL | Roles, aislamiento por área, idempotencia, control de versión, estados, bloqueo de edición directa, adjuntos y auditoría aprobados |
 | Contrato SQL de Administración | Roles, historial, versiones obsoletas, protección de cuenta propia, áreas en uso y validación de fichas aprobados |
-| Migraciones en Supabase municipal | `20260916153745_municipal_core`, `20260916154951_municipal_access_hardening`, `20260916162200_chiclayo_institutional_configuration` y `20260917210945_municipal_administration` |
+| Contrato SQL de organización | Trámite histórico, asignación válida, liberación al derivar, bloqueo de perfiles con pendientes, permisos y versiones obsoletas aprobados |
+| Migraciones en Supabase municipal | `20260916153745_municipal_core`, `20260916154951_municipal_access_hardening`, `20260916162200_chiclayo_institutional_configuration`, `20260917210945_municipal_administration` y `20260917214043_municipal_work_queue` |
 | Configuración de Chiclayo | Nombre MPCH, 14 gerencias y un punto de recepción activos; referencia AC inactiva; fuentes oficiales registradas |
 | Consultas anónimas a la API real | `cases` y `staff_profiles` rechazadas con HTTP 401 |
 | Asesor de seguridad de Supabase | Sin avisos de tablas o RLS; un aviso Auth por protección contra contraseñas filtradas desactivada |
-| Asesor de rendimiento | 15 índices todavía sin uso; información esperable en tablas nuevas sin datos operativos |
+| Asesor de rendimiento | 16 índices todavía sin uso; información esperable en tablas nuevas sin datos operativos |
 
 Los índices soportan filtros, relaciones y ordenaciones del flujo; no se eliminaron por falta de uso en una base nueva. [Explicación del aviso](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index).
 
@@ -46,6 +47,16 @@ El módulo Administración pasó 62 pruebas Python y ambos contratos SQL con las
 La migración de Administración se aplicó al proyecto municipal y se comprobó con sesiones Auth reales: el administrador leyó 16 áreas y cuatro perfiles, guardó la ficha GENERAL conservando su contenido y verificó las versiones anterior y posterior en el historial. La petición anónima al listado recibió HTTP 401. Mesa de partes, gestor y consulta recibieron rechazo tanto al listar como al intentar guardar, y no pudieron leer eventos administrativos. Todas las sesiones de verificación se cerraron. El estado comprobado conserva cero solicitantes y cero expedientes, con un evento administrativo de revisión de la ficha GENERAL.
 
 Después de esta migración, los asesores de Supabase no detectaron nuevos avisos de seguridad. Permanecen el aviso Auth sobre protección de contraseñas filtradas y los avisos informativos de índices sin uso, enlazados arriba. Las pruebas de versiones obsoletas no equivalen a una prueba de carga con múltiples operadores simultáneos.
+
+## Validación de trámites, responsables y bandeja
+
+La ampliación pasó 80 pruebas Python, Ruff y tres contratos SQL con las cinco migraciones en PGlite. El nuevo contrato comprueba conservación de fichas, rechazo de responsables inactivos o de otra área, idempotencia del registro, liberación al derivar, permisos de organización, historial anterior/posterior y protección de perfiles con pendientes. También se comprobaron los límites de días completos en horario de Chiclayo y las fechas objetivo de hoy, vencidas y próximas.
+
+La prueba de interfaz recorrió registro con trámite y responsable, cambio de prioridad y objetivo, derivación y accesos rápidos a anchos 390 y 1280. El CSV incluye trámite y responsable y conserva la exclusión de documentos de identidad. La prueba construye controles y ejecuta sus manejadores; no certifica el dibujo nativo en dispositivos.
+
+En Supabase se aplicó `20260917214043_municipal_work_queue`. Las cuatro cuentas del piloto pudieron consultar el directorio y la bandeja con los nuevos filtros y la relación explícita de responsable. Las mutaciones de un expediente inexistente fueron rechazadas; Consulta no obtuvo permiso de organización y la petición anónima recibió HTTP 401. Las sesiones se cerraron al terminar. La base conserva cero expedientes y cero solicitantes: las escrituras completas de este flujo se comprobaron exclusivamente en bases aisladas y en la demostración, sin insertar solicitudes ficticias en Supabase.
+
+Los asesores no reportaron nuevos avisos de seguridad; permanecen el aviso Auth y los índices todavía sin uso documentados arriba. La RLS conserva el alcance por área. Faltan las pruebas de carga concurrente y el uso integral desde dispositivos reales.
 
 ## Límites de esta validación
 

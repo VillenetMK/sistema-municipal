@@ -15,8 +15,10 @@ from munigest.domain import (
     UserError,
     clean_text,
     validate_attachment,
+    validate_case_work,
     validate_draft,
 )
+from munigest.work_queue import rest_filters
 
 
 class SupabaseRepository:
@@ -157,21 +159,29 @@ class SupabaseRepository:
         self.profile = None
         await self.client.aclose()
 
-    async def departments(self):
+    async def departments(self, include_inactive=False):
         return (
             await self._request(
                 "GET",
                 "/rest/v1/departments",
-                params={"select": "*", "is_active": "eq.true", "order": "name"},
+                params={
+                    "select": "*",
+                    "order": "name",
+                    **({} if include_inactive else {"is_active": "eq.true"}),
+                },
             )
         ).json()
 
-    async def procedures(self):
+    async def procedures(self, include_inactive=False):
         return (
             await self._request(
                 "GET",
                 "/rest/v1/procedures",
-                params={"select": "*", "is_active": "eq.true", "order": "name"},
+                params={
+                    "select": "*",
+                    "order": "name",
+                    **({} if include_inactive else {"is_active": "eq.true"}),
+                },
             )
         ).json()
 
@@ -225,9 +235,30 @@ class SupabaseRepository:
     async def metrics(self):
         return (await self._request("POST", "/rest/v1/rpc/case_metrics", json={})).json()
 
-    async def list_cases(self, query="", status="", offset=0, limit=51):
+    async def staff_directory(self):
+        rows = []
+        while True:
+            page = (
+                await self._request(
+                    "GET",
+                    "/rest/v1/staff_profiles",
+                    params={
+                        "select": "user_id,display_name,role,department_id,is_active",
+                        "order": "display_name,user_id",
+                        "limit": "1000",
+                        "offset": str(len(rows)),
+                    },
+                )
+            ).json()
+            rows.extend(page)
+            if len(page) < 1000:
+                return rows
+
+    async def list_cases(self, query="", status="", offset=0, limit=51, *, filters=None):
+        if offset < 0 or not 1 <= limit <= 100:
+            raise UserError("La página de expedientes no es válida.")
         params = {
-            "select": "*,applicant:applicants(full_name,document_type,document_number),department:departments(name)",
+            "select": "*,applicant:applicants(full_name,document_type,document_number),department:departments(name),assignee:staff_profiles!cases_assigned_to_fkey(display_name,is_active)",
             "order": "created_at.desc,id.desc",
             "offset": str(offset),
             "limit": str(limit),
@@ -237,6 +268,7 @@ class SupabaseRepository:
         term = re.sub(r"[^0-9A-Za-zÀ-ÿ -]", " ", query).strip()[:60]
         if term:
             params["or"] = f"(reference.ilike.*{term}*,title.ilike.*{term}*)"
+        params.update(rest_filters(filters, (self.profile or {}).get("user_id")))
         return (await self._request("GET", "/rest/v1/cases", params=params)).json()
 
     async def get_case(self, case_id):
@@ -246,7 +278,7 @@ class SupabaseRepository:
                 "/rest/v1/cases",
                 params={
                     "id": f"eq.{case_id}",
-                    "select": "*,applicant:applicants(*),department:departments(name)",
+                    "select": "*,applicant:applicants(*),department:departments(name),assignee:staff_profiles!cases_assigned_to_fkey(display_name,is_active)",
                 },
             )
         ).json()
@@ -285,6 +317,19 @@ class SupabaseRepository:
                     "new_status": target,
                     "new_department": department_id,
                     "note": note.strip(),
+                },
+            )
+        ).json()
+
+    async def set_case_work(self, case, raw):
+        return (
+            await self._request(
+                "POST",
+                "/rest/v1/rpc/set_case_work",
+                json={
+                    "case_id": case["id"],
+                    "expected_version": case["version"],
+                    **validate_case_work(raw),
                 },
             )
         ).json()

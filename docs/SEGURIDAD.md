@@ -1,5 +1,11 @@
 # Modelo de acceso
 
+La asignación individual organiza responsabilidades y no amplía el acceso: los gestores y perfiles de consulta siguen limitados a su área. Administrador y Mesa de Partes conservan acceso global. Administrador, Mesa de Partes y Gestor pueden organizar los expedientes abiertos que su rol permite gestionar; Consulta solo los lee.
+
+El responsable debe pertenecer al área actual, estar activo y tener permiso de atención. Al derivar se retira automáticamente la asignación anterior y se registra en el historial. Los perfiles con pendientes asignados no pueden desactivarse, perder el permiso de atención ni cambiar de área hasta liberar o reasignar esos expedientes. Las comprobaciones adquieren bloqueos sobre las filas para coordinar asignaciones y cambios de perfiles.
+
+El trámite se valida en la base y su copia histórica procede del catálogo, no de una ficha enviada por el cliente. La organización compara la versión del expediente y guarda el estado anterior y posterior en la misma transacción. La fecha objetivo sigue siendo interna; no se deriva automáticamente del plazo de una ficha.
+
 | Perfil | Lectura | Escritura |
 |---|---|---|
 | Administrador | Expedientes municipales e historial de Administración | Registro, actuaciones y gestión de catálogos y perfiles existentes |

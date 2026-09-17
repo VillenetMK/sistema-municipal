@@ -17,11 +17,10 @@ from munigest.domain import (
     TRANSITIONS,
     SessionExpired,
     UserError,
-    export_cases,
-    overdue,
 )
 from munigest.institution import INSTITUTION_NAME, OFFICIAL_RESOURCES, UNIT_TYPES
 from munigest.repository import SupabaseRepository
+from munigest.work_queue import due_notice, eligible_workers
 
 INK = "#192A32"
 MUTED = "#53616A"
@@ -86,6 +85,9 @@ class MunicipalApp:
         )
         self.profile = None
         self.departments = []
+        self.procedures = []
+        self.staff = []
+        self.filters = {}
         self.institution = INSTITUTION_NAME
         self.screen = 0
         self.query = ""
@@ -144,6 +146,7 @@ class MunicipalApp:
 
     def login(self):
         self.admin_screen = None
+        self.filters, self.query, self.status, self.offset = {}, "", "", 0
         self.page.appbar = None
         self.page.drawer = None
         self.page.controls.clear()
@@ -374,7 +377,9 @@ class MunicipalApp:
 
     async def new_handler(self, _):
         async def work():
-            self.departments = await self.repo.departments()
+            self.departments, self.procedures, self.staff = await asyncio.gather(
+                self.repo.departments(), self.repo.procedures(), self.repo.staff_directory()
+            )
             self.new_case()
 
         await self.guard(work)
@@ -452,8 +457,9 @@ class MunicipalApp:
 
     def case_card(self, item):
         tags = [pill(STATUSES[item["status"]]), small(item["department"]["name"])]
-        if overdue(item):
-            tags.append(pill("Objetivo vencido", ft.Icons.SCHEDULE))
+        notice = due_notice(item)
+        if notice:
+            tags.append(pill(notice, ft.Icons.SCHEDULE))
         return ft.Container(
             ft.Column(
                 [
@@ -471,6 +477,12 @@ class MunicipalApp:
                     ),
                     ft.Text(item["title"], size=17, weight=ft.FontWeight.W_600, color=INK),
                     ft.Row(tags, wrap=True, spacing=10),
+                    small(
+                        f"Trámite: {(item.get('procedure_snapshot') or {}).get('name') or 'Sin trámite vinculado'}"
+                    ),
+                    small(
+                        f"Responsable: {(item.get('assignee') or {}).get('display_name') or 'Pendiente de asignación'}"
+                    ),
                     ft.Row(
                         [
                             small(f"Prioridad: {PRIORITIES[item['priority']]}"),
@@ -493,82 +505,9 @@ class MunicipalApp:
         )
 
     async def inbox(self):
-        results = await self.repo.list_cases(self.query, self.status, self.offset)
-        has_more = len(results) > 50
-        self.rows = results[:50]
-        search = ft.TextField(
-            label="Buscar por código o asunto",
-            value=self.query,
-            prefix_icon=ft.Icons.SEARCH,
-            max_length=60,
-        )
-        status = ft.Dropdown(
-            label="Estado",
-            value=self.status,
-            options=[ft.DropdownOption("", "Todos los estados")]
-            + [ft.DropdownOption(k, v) for k, v in STATUSES.items()],
-            width=220,
-        )
+        from munigest.work_ui import show_inbox
 
-        async def apply_filter(e):
-            self.query, self.status, self.offset = search.value or "", status.value or "", 0
-            await self.guard(lambda: self.navigate(1), e.control)
-
-        search.on_submit = apply_filter
-        status.on_select = apply_filter
-
-        async def export(e):
-            async def work():
-                await self.picker.save_file(
-                    file_name="expedientes_pagina.csv", src_bytes=export_cases(self.rows)
-                )
-
-            await self.guard(work, e.control)
-
-        async def previous(e):
-            self.offset = max(0, self.offset - 50)
-            await self.guard(lambda: self.navigate(1), e.control)
-
-        async def following(e):
-            self.offset += 50
-            await self.guard(lambda: self.navigate(1), e.control)
-
-        actions = (
-            [ft.FilledButton("Registrar solicitud", icon=ft.Icons.ADD, on_click=self.new_handler)]
-            if self.can_register()
-            else []
-        )
-        actions += [
-            ft.OutlinedButton(
-                "Exportar página CSV",
-                icon=ft.Icons.DOWNLOAD,
-                disabled=not self.rows,
-                on_click=export,
-            )
-        ]
-        self.content.controls = [
-            self.heading(
-                "Bandeja de expedientes",
-                "Consulta, deriva y registra las actuaciones de cada solicitud.",
-                actions,
-            ),
-            search,
-            ft.Row(
-                [status, ft.Button("Buscar", icon=ft.Icons.SEARCH, on_click=apply_filter)],
-                wrap=True,
-            ),
-            ft.Row(
-                [
-                    small(f"Página {self.offset // 50 + 1} · {len(self.rows)} expedientes"),
-                    ft.TextButton("Anterior", disabled=self.offset == 0, on_click=previous),
-                    ft.TextButton("Siguiente", disabled=not has_more, on_click=following),
-                ],
-                wrap=True,
-            ),
-        ]
-        self.content.controls += [self.case_card(x) for x in self.rows] or [
-            self.empty("No hay resultados", "Prueba otro código, asunto o estado.")
-        ]
+        await show_inbox(self)
 
     def new_case(self):
         if not self.can_register():
@@ -576,6 +515,16 @@ class MunicipalApp:
             return
         request_id = str(uuid4())
         fields = {
+            "procedure_id": ft.Dropdown(
+                label="Trámite",
+                value=next((p["id"] for p in self.procedures if p["code"] == "GENERAL"), None),
+                options=[ft.DropdownOption(p["id"], p["name"]) for p in self.procedures],
+            ),
+            "assigned_to": ft.Dropdown(
+                label="Responsable (opcional)",
+                value="",
+                options=[ft.DropdownOption("", "Pendiente de asignación")],
+            ),
             "document_type": ft.Dropdown(
                 label="Tipo de documento",
                 value="DNI",
@@ -619,10 +568,41 @@ class MunicipalApp:
         }
         error = ft.Text("", color="#7B2222", visible=False)
 
+        def refresh_workers():
+            fields["assigned_to"].value = ""
+            fields["assigned_to"].options = [ft.DropdownOption("", "Pendiente de asignación")] + [
+                ft.DropdownOption(s["user_id"], s["display_name"])
+                for s in eligible_workers(self.staff, fields["department_id"].value)
+            ]
+
+        async def department_changed(_):
+            refresh_workers()
+            self.page.update()
+
+        async def procedure_changed(_):
+            procedure = next(
+                (p for p in self.procedures if p["id"] == fields["procedure_id"].value), None
+            )
+            if procedure and procedure.get("department_id"):
+                fields["department_id"].value = procedure["department_id"]
+                refresh_workers()
+            self.page.update()
+
+        fields["department_id"].on_select = department_changed
+        fields["procedure_id"].on_select = procedure_changed
+        initial_procedure = next(
+            (p for p in self.procedures if p["id"] == fields["procedure_id"].value), None
+        )
+        if initial_procedure and initial_procedure.get("department_id"):
+            fields["department_id"].value = initial_procedure["department_id"]
+            refresh_workers()
+
         async def submit(e):
             async def work():
                 error.visible = False
                 try:
+                    if not fields["procedure_id"].value:
+                        raise UserError("Selecciona un trámite activo del catálogo.")
                     result = await self.repo.create_case(
                         {k: v.value for k, v in fields.items()} | {"request_id": request_id}
                     )
@@ -676,9 +656,11 @@ class MunicipalApp:
                         [
                             fields[x]
                             for x in [
+                                "procedure_id",
                                 "title",
                                 "description",
                                 "department_id",
+                                "assigned_to",
                                 "channel",
                                 "priority",
                                 "due_on",
@@ -702,8 +684,13 @@ class MunicipalApp:
         self.page.update()
 
     async def detail(self, case_id):
-        item, events, documents = await asyncio.gather(
-            self.repo.get_case(case_id), self.repo.events(case_id), self.repo.documents(case_id)
+        from munigest.work_ui import work_event_lines, work_panel
+
+        item, events, documents, areas = await asyncio.gather(
+            self.repo.get_case(case_id),
+            self.repo.events(case_id),
+            self.repo.documents(case_id),
+            self.repo.departments(include_inactive=True),
         )
         applicant = item["applicant"]
         can_change = self.profile["role"] != "consulta" and item["status"] != "archivado"
@@ -717,7 +704,11 @@ class MunicipalApp:
         department = ft.Dropdown(
             label="Área de destino",
             value=item["department_id"],
-            options=[ft.DropdownOption(x["id"], x["name"]) for x in self.departments],
+            options=[
+                ft.DropdownOption(x["id"], x["name"])
+                for x in areas
+                if x["is_active"] or x["id"] == item["department_id"]
+            ],
         )
         note = ft.TextField(
             label="Motivo, observación o respuesta",
@@ -773,7 +764,7 @@ class MunicipalApp:
         timeline = []
         for event in events:
             area = next(
-                (d["name"] for d in self.departments if d["id"] == event.get("to_department_id")),
+                (d["name"] for d in areas if d["id"] == event.get("to_department_id")),
                 "",
             )
             timeline += [
@@ -789,6 +780,7 @@ class MunicipalApp:
                 ),
                 small(f"{timestamp(event['created_at'])} · {event['actor_name']}"),
                 ft.Text(event["note"], selectable=True),
+                *work_event_lines(event),
                 small(area),
                 ft.Divider(color=LINE),
             ]
@@ -856,6 +848,7 @@ class MunicipalApp:
                 ]
             ),
             panel(document_controls),
+            await work_panel(self, item),
         ]
         if can_change:
             self.content.controls.append(

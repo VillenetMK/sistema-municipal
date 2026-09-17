@@ -86,7 +86,7 @@ def test_all_screens_build_at_desktop_and_mobile_widths(seeded):
                 if entity != "staff_profiles":
                     await admin.editor()
                     assert_valid_wrapping_layout(app.content)
-            app.new_case()
+            await app.new_handler(None)
             assert_valid_wrapping_layout(app.content)
             cases = await app.repo.list_cases()
             if cases:

@@ -16,13 +16,15 @@ Los códigos usan de 2 a 20 letras sin tildes, números, guion o guion bajo; se 
 
 Un importe vacío significa **no registrado** y un importe `0` significa **gratuito según la ficha**. No deben confundirse. El plazo es un entero de 1 a 3650 días; puede dejarse vacío. La ficha todavía no distingue días hábiles y calendario: esta precisión debe quedar en el sustento y no se utiliza para calcular vencimientos.
 
-Las fichas activas aparecen en **Áreas y trámites**, con su área, importe y plazo registrados. El catálogo orienta la atención; no aplica tarifas, no genera cobros, no calcula plazos legales y todavía no vincula una ficha específica a cada expediente. El registro de expedientes mantiene su selección explícita de área y fecha objetivo interna.
+Las fichas activas aparecen en **Áreas y trámites** y se pueden elegir al registrar o clasificar un expediente. Se conserva una copia de la ficha vigente al vincularla; editar el catálogo no reescribe expedientes anteriores. El área del catálogo se propone como destino inicial y puede ajustarse. La aplicación no genera cobros ni calcula plazos legales: la fecha objetivo interna se registra explícitamente. Ver [expedientes y bandeja](EXPEDIENTES.md).
 
 ## Personal
 
 Permite editar el nombre, rol, área y estado de perfiles existentes. Los roles **Gestor** y **Consulta** requieren un área. Activar un perfil con área asignada requiere que el área esté activa. Una cuenta desactivada deja de acceder a los datos en las siguientes operaciones; la información que ya descargó no se puede retirar de su dispositivo.
 
 El administrador no puede desactivar su propia cuenta ni retirarse el rol Administrador desde este módulo. Puede editar otros administradores. Los cambios administrativos se serializan y comprueban nuevamente al actor dentro de la transacción, por lo que dos administradores no pueden dejarse mutuamente sin acceso mediante solicitudes simultáneas.
+
+Si una persona tiene expedientes pendientes a su cargo, primero deben reasignarse o quedar sin responsable antes de desactivar su perfil, cambiarla de área o pasarla al rol Consulta. En **Expedientes**, filtrar por esa persona y marcar **Solo pendientes** permite encontrarlos. Los expedientes atendidos o archivados conservan el responsable histórico.
 
 Esta pantalla no crea identidades de Auth, no cambia correos ni restablece contraseñas. El alta de cuentas individuales continúa mediante la [herramienta Python de alta](USUARIOS.md) o el procedimiento operativo allí documentado. Nunca se solicita una clave administrativa de Supabase en la aplicación.
 

@@ -3,7 +3,7 @@
 import csv
 import io
 import re
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from pathlib import PurePath
 from uuid import UUID
 
@@ -30,6 +30,7 @@ ROLES = {
 PRIORITIES = {"normal": "Normal", "alta": "Alta", "urgente": "Urgente"}
 CHANNELS = {"presencial": "Presencial", "virtual": "Virtual", "correo": "Correo"}
 MAX_FILE_SIZE = 10 * 1024 * 1024
+MUNICIPAL_TZ = timezone(timedelta(hours=-5))
 
 
 class UserError(Exception):
@@ -45,6 +46,46 @@ def clean_text(value, label, minimum=1, maximum=200):
     if not minimum <= len(text) <= maximum or "\x00" in text:
         raise UserError(f"{label}: ingresa entre {minimum} y {maximum} caracteres.")
     return text
+
+
+def municipal_today():
+    return datetime.now(MUNICIPAL_TZ).date()
+
+
+def optional_uuid(value, label):
+    if value in (None, ""):
+        return None
+    try:
+        return str(UUID(str(value)))
+    except (ValueError, TypeError):
+        raise UserError(f"Selecciona {label} válido.") from None
+
+
+def optional_date(value, label):
+    if not value:
+        return None
+    try:
+        parsed = date.fromisoformat(value)
+        if parsed.isoformat() != value:
+            raise ValueError
+        return value
+    except (ValueError, TypeError):
+        raise UserError(f"{label}: usa una fecha válida con formato AAAA-MM-DD.") from None
+
+
+def validate_case_work(raw):
+    procedure = optional_uuid(raw.get("procedure_id"), "un trámite")
+    if not procedure:
+        raise UserError("Selecciona un trámite del catálogo.")
+    if raw.get("priority") not in PRIORITIES:
+        raise UserError("Selecciona una prioridad válida.")
+    return {
+        "procedure_id": procedure,
+        "assigned_to": optional_uuid(raw.get("assigned_to"), "un responsable"),
+        "priority": raw["priority"],
+        "due_on": optional_date(raw.get("due_on"), "Fecha objetivo interna"),
+        "note": clean_text(raw.get("note"), "Motivo", 10, 2000),
+    }
 
 
 def validate_draft(raw):
@@ -80,12 +121,9 @@ def validate_draft(raw):
     data["phone"] = str(data.get("phone") or "").strip()
     if data["phone"] and not re.fullmatch(r"\+?[0-9 ()-]{7,20}", data["phone"]):
         raise UserError("Revisa el teléfono de contacto.")
-    data["due_on"] = data.get("due_on") or None
-    if data["due_on"]:
-        try:
-            date.fromisoformat(data["due_on"])
-        except ValueError:
-            raise UserError("La fecha objetivo debe tener el formato AAAA-MM-DD.") from None
+    data["due_on"] = optional_date(data.get("due_on"), "Fecha objetivo interna")
+    data["procedure_id"] = optional_uuid(data.get("procedure_id"), "un trámite")
+    data["assigned_to"] = optional_uuid(data.get("assigned_to"), "un responsable")
     return data
 
 
@@ -121,7 +159,7 @@ def overdue(case, today=None):
     return bool(
         case.get("due_on")
         and case["status"] not in {"atendido", "archivado"}
-        and date.fromisoformat(case["due_on"]) < (today or date.today())
+        and date.fromisoformat(case["due_on"]) < (today or municipal_today())
     )
 
 
@@ -141,6 +179,8 @@ def export_cases(cases):
             "Asunto",
             "Estado",
             "Área",
+            "Trámite",
+            "Responsable",
             "Prioridad",
             "Fecha de ingreso",
             "Fecha objetivo interna",
@@ -155,6 +195,8 @@ def export_cases(cases):
                     item["title"],
                     STATUSES[item["status"]],
                     item.get("department", {}).get("name", ""),
+                    (item.get("procedure_snapshot") or {}).get("name", ""),
+                    (item.get("assignee") or {}).get("display_name", ""),
                     PRIORITIES[item["priority"]],
                     item["created_at"],
                     item.get("due_on", ""),
