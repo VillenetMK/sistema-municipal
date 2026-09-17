@@ -64,10 +64,16 @@ GitHub conserva el código y VS Code trabaja sobre la copia local. No hace falta
 
 El proyecto municipal es **`lxvmwjcqdjoidgpinmgm`**. Su esquema inicial ya fue aplicado. La aplicación rechaza el identificador de EcoSphere para evitar confusiones.
 
-1. Copiar `.env.example` a `.env`.
-2. Configurar `MUNIGEST_MODE=supabase` y la clave **publishable** del proyecto.
-3. Usar una de las cuentas de prueba ya entregadas para el piloto, o crear una cuenta individual siguiendo la [puesta en marcha](docs/PUESTA_EN_MARCHA.md).
-4. Ejecutar el programa y entrar con ese usuario.
+Crear el archivo local desde la terminal de VS Code en Windows:
+
+```powershell
+py -3.12 scripts/setup_env.py
+py -3.12 -m uv run python run.py
+```
+
+El primer comando crea `.env` junto a `run.py`, con el modo Supabase, la URL municipal y su clave **publishable** ya preparados. Si el archivo existe, lo conserva sin cambios. En Linux o macOS se puede ejecutar `python scripts/setup_env.py`.
+
+Entrar con una de las cuentas de prueba ya entregadas para el piloto, o crear una cuenta individual siguiendo la [puesta en marcha](docs/PUESTA_EN_MARCHA.md). La clave publicable identifica el proyecto; cada operador necesita su propia cuenta autorizada.
 
 Se crearon y probaron cuatro cuentas del piloto, una por rol; sus credenciales se entregaron fuera del repositorio. Para crear cuentas de trabajadores identificados se incluye una [herramienta operativa de alta](docs/USUARIOS.md). El [despliegue del servidor](docs/DESPLIEGUE.md) incluye Dockerfile y Compose. Las cuentas de trabajadores reales y la publicación del servicio siguen pendientes.
 
@@ -96,6 +102,7 @@ src/munigest/config.py        Configuración y validación del proyecto
 src/munigest/institution.py   Identidad de Chiclayo y referencias públicas
 supabase/migrations/         Esquema, políticas RLS y operaciones transaccionales
 scripts/prepare_client.py    Configuración pública para paquetes nativos
+scripts/setup_env.py         Crea .env local sin sobrescribirlo
 tests/                       Pruebas Python y contrato SQL
 ```
 

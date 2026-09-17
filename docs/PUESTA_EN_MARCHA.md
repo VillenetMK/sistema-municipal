@@ -10,23 +10,21 @@ El esquema inicial está aplicado y registrado en `supabase/migrations/`. No vol
 
 ## 2. Configurar la aplicación
 
-Copiar `.env.example` a `.env`, en la raíz del repositorio. En Windows se puede copiar desde el Explorador; en una terminal Python:
+La plantilla `.env.example` ya contiene la configuración pública del proyecto municipal. Para crear `.env` en la raíz del repositorio, ejecutar en la terminal de VS Code en Windows:
+
+```powershell
+py -3.12 scripts/setup_env.py
+```
+
+En Linux o macOS:
 
 ```bash
-python -c "import shutil; shutil.copyfile('.env.example', '.env')"
+python scripts/setup_env.py
 ```
 
-Usar:
+El script funciona sin instalar dependencias y nunca sobrescribe un `.env` existente. Si ya existe, revisar que `MUNIGEST_MODE=supabase` y `SUPABASE_PROJECT_REF=lxvmwjcqdjoidgpinmgm` para usar la base municipal. Para explorar la demostración, cambiar el modo a `demo`. Reiniciar la aplicación después de cambiar la configuración.
 
-```dotenv
-MUNIGEST_MODE=supabase
-MUNIGEST_NAME=MuniGest Chiclayo
-SUPABASE_PROJECT_REF=lxvmwjcqdjoidgpinmgm
-SUPABASE_URL=https://lxvmwjcqdjoidgpinmgm.supabase.co
-SUPABASE_PUBLISHABLE_KEY=TU_CLAVE_PUBLICABLE
-```
-
-Obtener la clave **publishable** desde las claves API del proyecto. No introducir `service_role`, una clave `sb_secret`, la contraseña de PostgreSQL o un token personal. `.env` está excluido de Git.
+La clave **publishable** incluida no concede acceso como trabajador: cada operador debe iniciar sesión con una cuenta autorizada. Si se rota la clave del proyecto, actualizar `SUPABASE_PUBLISHABLE_KEY` desde las claves API del panel. No introducir `service_role`, una clave `sb_secret`, la contraseña de PostgreSQL o un token personal. `.env` está excluido de Git.
 
 ## 3. Primer administrador
 
