@@ -75,6 +75,8 @@ El primer comando crea `.env` junto a `run.py`, con el modo Supabase, la URL mun
 
 Entrar con una de las cuentas de prueba ya entregadas para el piloto, o crear una cuenta individual siguiendo la [puesta en marcha](docs/PUESTA_EN_MARCHA.md). La clave publicable identifica el proyecto; cada operador necesita su propia cuenta autorizada.
 
+Para la cuenta administradora del piloto, escribir `admin` en **Usuario o correo** y usar la contraseña entregada por separado. El correo completo también sigue siendo válido.
+
 Se crearon y probaron cuatro cuentas del piloto, una por rol; sus credenciales se entregaron fuera del repositorio. Para crear cuentas de trabajadores identificados se incluye una [herramienta operativa de alta](docs/USUARIOS.md). El [despliegue del servidor](docs/DESPLIEGUE.md) incluye Dockerfile y Compose. Las cuentas de trabajadores reales y la publicación del servicio siguen pendientes.
 
 La aplicación no incluye claves secretas, contraseñas de base de datos ni credenciales `service_role`. Las sesiones se mantienen en memoria y se renuevan de forma asíncrona. Un fallo de conexión real nunca activa automáticamente la demostración.

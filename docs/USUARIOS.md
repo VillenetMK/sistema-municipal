@@ -13,9 +13,11 @@ El rol `admin` de la aplicación no da acceso al panel de Supabase ni a su clave
 
 ## Cuentas de prueba creadas
 
-El 16 de septiembre de 2026 se crearon cuatro cuentas activas en el proyecto municipal: administrador en GTIE, mesa de partes en MP, gestor en GDU y consulta en GDU. Se comprobó el inicio de sesión de cada una y su perfil. Los nombres, correos y contraseñas de acceso se entregaron fuera del repositorio; no se distribuyen como credenciales predeterminadas del programa.
+El 16 de septiembre de 2026 se crearon cuatro cuentas activas en el proyecto municipal: administrador en GTIE, mesa de partes en MP, gestor en GDU y consulta en GDU. Se comprobó el inicio de sesión de cada una y su perfil. Las contraseñas de acceso se entregaron fuera del repositorio; no se distribuyen como credenciales predeterminadas del programa.
 
 Son identidades ficticias del piloto, sin relación con trabajadores municipales. Sus direcciones usan `.invalid` y no reciben mensajes ni recuperación de contraseña por correo. La confirmación administrativa permite probar el acceso, pero no acredita la titularidad de un buzón. Desactivar estos perfiles y retirar sus identidades Auth antes de incorporar información real, después de crear las cuentas individuales autorizadas.
+
+La cuenta administradora del piloto admite `admin` en el campo **Usuario o correo**. Es un alias local de su correo Auth, limitado al proyecto municipal; también se puede entrar con el correo completo. La contraseña se valida en Supabase y el rol procede del perfil activo. Las contraseñas vigentes se entregan por separado y no se incluyen en el código.
 
 El alta utilizó la API administrativa de Auth mediante una función temporal limitada al proyecto y a estas cuatro cuentas. Al finalizar se sustituyó por una respuesta de operación cerrada; una llamada autenticada devuelve HTTP 410. No se insertaron identidades directamente en las tablas internas de Auth.
 

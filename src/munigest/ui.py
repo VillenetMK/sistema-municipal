@@ -145,10 +145,10 @@ class MunicipalApp:
         self.page.appbar = None
         self.page.drawer = None
         self.page.controls.clear()
-        email = ft.TextField(
-            label="Correo institucional",
-            keyboard_type=ft.KeyboardType.EMAIL,
-            autofill_hints=ft.AutofillHint.EMAIL,
+        identifier = ft.TextField(
+            label="Usuario o correo",
+            keyboard_type=ft.KeyboardType.TEXT,
+            autofill_hints=ft.AutofillHint.USERNAME,
             max_length=254,
         )
         password = ft.TextField(
@@ -163,7 +163,9 @@ class MunicipalApp:
             async def work():
                 error.visible = False
                 try:
-                    self.profile = await self.repo.sign_in(email.value or "", password.value or "")
+                    self.profile = await self.repo.sign_in(
+                        identifier.value or "", password.value or ""
+                    )
                     self.departments, settings = await asyncio.gather(
                         self.repo.departments(), self.repo.settings()
                     )
@@ -203,7 +205,7 @@ class MunicipalApp:
                 ]
             )
         else:
-            form.extend([email, password, small("Acceso para personal municipal autorizado.")])
+            form.extend([identifier, password, small("Acceso para personal municipal autorizado.")])
         form.extend(
             [
                 error,

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import time
+from dataclasses import replace
 
 import httpx
 import pytest
@@ -14,7 +15,8 @@ CONFIG = Settings(
 )
 
 
-def test_login_requires_active_authorized_profile():
+@pytest.mark.parametrize("identifier", ["demo@example.invalid", "admin"])
+def test_login_requires_active_authorized_profile(identifier):
     def handler(request):
         if request.url.path == "/auth/v1/token":
             return httpx.Response(
@@ -31,9 +33,57 @@ def test_login_requires_active_authorized_profile():
     async def exercise():
         repo = SupabaseRepository(CONFIG, httpx.MockTransport(handler))
         with pytest.raises(UserError, match="perfil municipal activo"):
-            await repo.sign_in("demo@example.invalid", "test-only")
+            await repo.sign_in(identifier, "test-only")
         assert repo.session is None
         await repo.close()
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize(
+    "config,identifier,email",
+    [
+        (CONFIG, "admin", "admin.piloto@munigest.invalid"),
+        (CONFIG, " ADMIN ", "admin.piloto@munigest.invalid"),
+        (CONFIG, " personal@example.invalid ", "personal@example.invalid"),
+        (
+            replace(CONFIG, project_ref="otherproject", url="https://otherproject.supabase.co"),
+            "admin",
+            "admin",
+        ),
+    ],
+)
+def test_login_alias_still_authenticates_and_uses_the_server_role(config, identifier, email):
+    paths = []
+    # El alias no otorga un rol: se conserva el perfil que devuelve el servidor.
+    profile = {"user_id": "u1", "role": "consulta", "is_active": True}
+
+    def handler(request):
+        paths.append(request.url.path)
+        if request.url.path == "/auth/v1/token":
+            assert json.loads(request.content) == {"email": email, "password": "test-only"}
+            return httpx.Response(
+                200,
+                json={
+                    "access_token": "test-access",
+                    "refresh_token": "test-refresh",
+                    "expires_in": 3600,
+                    "user": {"id": "u1"},
+                },
+            )
+        assert request.url.path == "/rest/v1/staff_profiles"
+        assert request.headers["Authorization"] == "Bearer test-access"
+        assert request.url.params["user_id"] == "eq.u1"
+        assert request.url.params["is_active"] == "eq.true"
+        return httpx.Response(200, json=[profile])
+
+    async def exercise():
+        repo = SupabaseRepository(config, httpx.MockTransport(handler))
+        try:
+            assert await repo.sign_in(identifier, "test-only") == profile
+            assert paths == ["/auth/v1/token", "/rest/v1/staff_profiles"]
+        finally:
+            await repo.close()
 
     asyncio.run(exercise())
 

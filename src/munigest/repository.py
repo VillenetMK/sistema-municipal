@@ -15,6 +15,11 @@ from munigest.domain import SessionExpired, UserError, validate_attachment, vali
 class SupabaseRepository:
     def __init__(self, settings, transport=None):
         settings.validate()
+        self.login_aliases = (
+            {"admin": "admin.piloto@munigest.invalid"}
+            if settings.project_ref == "lxvmwjcqdjoidgpinmgm"
+            else {}
+        )
         self.client = httpx.AsyncClient(
             base_url=settings.url,
             headers={"apikey": settings.key},
@@ -99,12 +104,14 @@ class SupabaseRepository:
                 ) from None
 
     async def sign_in(self, email, password):
+        email = email.strip()
+        email = self.login_aliases.get(email.casefold(), email)
         response = await self._request(
             "POST",
             "/auth/v1/token",
             authenticated=False,
             params={"grant_type": "password"},
-            json={"email": email.strip(), "password": password},
+            json={"email": email, "password": password},
         )
         data = response.json()
         self._save_session(data)

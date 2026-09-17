@@ -7,7 +7,7 @@ Fecha: 16 de septiembre de 2026.
 
 | Comprobación | Resultado |
 |---|---|
-| Pruebas Python | 46 aprobadas, incluidas las variantes de interfaz con y sin expedientes |
+| Pruebas Python | 51 aprobadas, incluidas las variantes de interfaz con y sin expedientes y el acceso mediante alias |
 | Análisis estático Ruff | Sin errores |
 | Construcción de las pantallas | Login, resumen, bandeja, registro, detalle y catálogo; anchos 390 y 1280 |
 | Composición de filas y columnas | Ningún hijo expandido dentro de un contenedor con `wrap=True` en las pantallas comprobadas |
@@ -34,7 +34,9 @@ La entrega posterior de alta de usuarios y archivos de despliegue pasó 45 prueb
 
 Después se crearon cuatro identidades ficticias del piloto mediante una función temporal y la API Auth Admin del proyecto municipal. Se comprobó el acceso real de administrador (GTIE), mesa de partes (MP), gestor (GDU) y consulta (GDU), y se cerraron las sesiones de validación. La función rechazó una petición sin autorización y, una vez cerrada, devolvió HTTP 410 incluso con autenticación. El cliente de consulta recibió HTTP 403 al intentar modificar un perfil. Las credenciales se entregaron fuera de Git. No se configuró una clave administrativa en la aplicación.
 
-El asesor de seguridad actual informa `auth_leaked_password_protection`: la protección contra contraseñas filtradas está desactivada. La organización usa el plan Free y esta función requiere Pro o superior, según la [documentación de seguridad de contraseñas](https://supabase.com/docs/guides/auth/password-security). No se cambió el plan. Las cuentas del piloto usan contraseñas aleatorias independientes y deben retirarse antes del uso con información real.
+El asesor de seguridad actual informa `auth_leaked_password_protection`: la protección contra contraseñas filtradas está desactivada. La organización usa el plan Free y esta función requiere Pro o superior, según la [documentación de seguridad de contraseñas](https://supabase.com/docs/guides/auth/password-security). No se cambió el plan. Las cuentas del piloto se crearon con contraseñas aleatorias independientes y deben retirarse antes del uso con información real.
+
+El 17 de septiembre se actualizó la contraseña de la cuenta administradora a petición del responsable del piloto, mediante la API Auth con una sesión de esa misma cuenta. Se verificó un nuevo inicio de sesión real con el alias `admin`, conservando el mismo usuario Auth y perfil administrador activo. La contraseña vigente se conserva fuera del repositorio. Las pruebas del alias verifican el envío a Auth, la exigencia de un perfil activo, el rol devuelto por el servidor, el acceso por correo y su limitación al proyecto municipal.
 
 ## Límites de esta validación
 
