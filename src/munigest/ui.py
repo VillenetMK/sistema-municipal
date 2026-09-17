@@ -247,7 +247,7 @@ class MunicipalApp:
 
     def nav_handler(self, index):
         async def handler(_):
-            self.page.close_drawer()
+            await self.page.close_drawer()
             await self.guard(lambda: self.navigate(index))
 
         return handler
@@ -255,11 +255,15 @@ class MunicipalApp:
     def shell(self):
         self.page.controls.clear()
         mobile = (self.page.width or 1100) < 850
+
+        async def open_menu(_):
+            await self.page.show_drawer()
+
         self.menu_button = ft.IconButton(
             ft.Icons.MENU,
             tooltip="Abrir menú",
             visible=mobile,
-            on_click=lambda _: self.page.show_drawer(),
+            on_click=open_menu,
         )
         self.page.appbar = ft.AppBar(
             leading=self.menu_button,
@@ -269,7 +273,7 @@ class MunicipalApp:
         )
 
         async def drawer_change(e):
-            self.page.close_drawer()
+            await self.page.close_drawer()
             await self.guard(lambda: self.navigate(e.control.selected_index))
 
         self.page.drawer = ft.NavigationDrawer(

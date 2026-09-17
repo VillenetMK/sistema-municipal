@@ -48,6 +48,18 @@ uv run python run.py
 
 En Linux, el selector nativo de archivos puede requerir `zenity`. En entornos con proxy, la dependencia HTTP incluye soporte SOCKS.
 
+## Actualizar desde GitHub en Windows
+
+Abrir en VS Code la carpeta clonada `sistema-municipal`. Cerrar la aplicación antes de actualizar y ejecutar estos comandos, uno por uno, en la terminal de esa carpeta:
+
+```powershell
+git pull --ff-only origin main
+py -3.12 -m uv sync --frozen --extra desktop
+py -3.12 -m uv run python run.py
+```
+
+GitHub conserva el código y VS Code trabaja sobre la copia local. No hace falta exportar archivos ni instalar una extensión de IA para este flujo. La configuración `.env` se mantiene en cada equipo y está excluida del repositorio. Si Git informa cambios locales incompatibles, conservarlos y resolverlos antes de repetir la actualización.
+
 ## Conectar la base municipal
 
 El proyecto municipal es **`lxvmwjcqdjoidgpinmgm`**. Su esquema inicial ya fue aplicado. La aplicación rechaza el identificador de EcoSphere para evitar confusiones.
