@@ -718,6 +718,11 @@ class MunicipalApp:
             max_length=2000,
         )
 
+        async def receipt(e):
+            from munigest.report_ui import download_receipt
+
+            await download_receipt(self, case_id, e.control)
+
         async def update(e):
             async def work():
                 await self.repo.advance_case(item, target.value, department.value, note.value or "")
@@ -820,7 +825,10 @@ class MunicipalApp:
                         "Volver a la bandeja",
                         icon=ft.Icons.ARROW_BACK,
                         on_click=self.nav_handler(1),
-                    )
+                    ),
+                    ft.OutlinedButton(
+                        "Constancia PDF", icon=ft.Icons.PICTURE_AS_PDF, on_click=receipt
+                    ),
                 ],
             ),
             ft.Row(

@@ -1,13 +1,13 @@
 # Validación de la versión 0.1
 
 Fecha: 16 de septiembre de 2026.
-Última actualización: 17 de septiembre de 2026.
+Última actualización: 18 de septiembre de 2026.
 
 ## Resultados comprobados
 
 | Comprobación | Resultado |
 |---|---|
-| Pruebas Python | 80 aprobadas, incluidas asignación, filtros de fechas, recorrido completo de interfaz, Administración y acceso mediante alias |
+| Pruebas Python | 90 aprobadas, incluidos reportes completos, contenido PDF, descargas, permisos, organización de expedientes y Administración |
 | Análisis estático Ruff | Sin errores |
 | Construcción de las pantallas | Login, resumen, bandeja, registro, detalle, catálogo y Administración (listas y formularios); anchos 390 y 1280 |
 | Composición de filas y columnas | Ningún hijo expandido dentro de un contenedor con `wrap=True` en las pantallas comprobadas |
@@ -16,15 +16,17 @@ Fecha: 16 de septiembre de 2026.
 | Cuentas del piloto en Supabase real | Cuatro creadas mediante Auth Admin; inicio de sesión, perfil activo, rol y área comprobados para cada una |
 | Restricción de edición de perfiles | La cuenta de consulta recibió HTTP 403 al intentar una actualización directa |
 | Cierre de la función temporal de alta | HTTP 410 con sesión autenticada tras sustituirla por una respuesta de operación cerrada |
-| Esquema SQL en PostgreSQL aislado (PGlite) | Las cinco migraciones aplicadas correctamente, incluidas Administración y organización del trabajo |
+| Esquema SQL en PostgreSQL aislado (PGlite) | Las seis migraciones aplicadas correctamente, incluidos reportes con RLS |
 | Contrato SQL | Roles, aislamiento por área, idempotencia, control de versión, estados, bloqueo de edición directa, adjuntos y auditoría aprobados |
 | Contrato SQL de Administración | Roles, historial, versiones obsoletas, protección de cuenta propia, áreas en uso y validación de fichas aprobados |
 | Contrato SQL de organización | Trámite histórico, asignación válida, liberación al derivar, bloqueo de perfiles con pendientes, permisos y versiones obsoletas aprobados |
-| Migraciones en Supabase municipal | `20260916153745_municipal_core`, `20260916154951_municipal_access_hardening`, `20260916162200_chiclayo_institutional_configuration`, `20260917210945_municipal_administration` y `20260917214043_municipal_work_queue` |
+| Contrato SQL de reportes | Consulta completa de 1501 filas, límite exacto de 10000, rechazo de 10001, filtros, fechas de Chiclayo, permisos y documento de identidad parcial |
+| Documentos PDF | Constancia de una página, descripción de varias páginas, resumen con datos y vacío; renderizados y revisados visualmente |
+| Migraciones en Supabase municipal | `20260916153745_municipal_core`, `20260916154951_municipal_access_hardening`, `20260916162200_chiclayo_institutional_configuration`, `20260917210945_municipal_administration`, `20260917214043_municipal_work_queue` y `20260918184510_municipal_reports` |
 | Configuración de Chiclayo | Nombre MPCH, 14 gerencias y un punto de recepción activos; referencia AC inactiva; fuentes oficiales registradas |
 | Consultas anónimas a la API real | `cases` y `staff_profiles` rechazadas con HTTP 401 |
 | Asesor de seguridad de Supabase | Sin avisos de tablas o RLS; un aviso Auth por protección contra contraseñas filtradas desactivada |
-| Asesor de rendimiento | 16 índices todavía sin uso; información esperable en tablas nuevas sin datos operativos |
+| Asesor de rendimiento | 14 índices todavía sin uso; información esperable en tablas nuevas sin datos operativos |
 
 Los índices soportan filtros, relaciones y ordenaciones del flujo; no se eliminaron por falta de uso en una base nueva. [Explicación del aviso](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index).
 
@@ -57,6 +59,20 @@ La prueba de interfaz recorrió registro con trámite y responsable, cambio de p
 En Supabase se aplicó `20260917214043_municipal_work_queue`. Las cuatro cuentas del piloto pudieron consultar el directorio y la bandeja con los nuevos filtros y la relación explícita de responsable. Las mutaciones de un expediente inexistente fueron rechazadas; Consulta no obtuvo permiso de organización y la petición anónima recibió HTTP 401. Las sesiones se cerraron al terminar. La base conserva cero expedientes y cero solicitantes: las escrituras completas de este flujo se comprobaron exclusivamente en bases aisladas y en la demostración, sin insertar solicitudes ficticias en Supabase.
 
 Los asesores no reportaron nuevos avisos de seguridad; permanecen el aviso Auth y los índices todavía sin uso documentados arriba. La RLS conserva el alcance por área. Faltan las pruebas de carga concurrente y el uso integral desde dispositivos reales.
+
+## Validación de constancias y reportes
+
+El 18 de septiembre se añadieron constancias PDF y reportes de todos los resultados filtrados. Pasaron 90 pruebas Python, Ruff y los cuatro contratos SQL con las seis migraciones en PGlite. El contrato nuevo comprueba que las descargas son funciones `STABLE` con `SECURITY INVOKER`, sin acceso anónimo, y verifica todos los roles, perfiles inactivos, filtros combinados y límites de días en Chiclayo.
+
+Se comprobaron 1501 expedientes sin truncar, una consulta de exactamente 10000 y el rechazo explícito de 10001 resultados. Los datos ficticios se crearon exclusivamente en la base local y se revirtieron. El resumen utiliza el día del corte entregado por el servidor; las fechas objetivo de expedientes atendidos o archivados no se cuentan como pendientes vencidos.
+
+Las pruebas Python exportan 1205 filas únicas, protegen fórmulas CSV, comprueban caracteres en español y texto literal con etiquetas, y verifican que los archivos omiten documentos de identidad completos y contactos. La interfaz de reportes y los manejadores de descarga se probaron a anchos 390 y 1280, incluida la actualización de datos antes de descargar y el rechazo después de inactivar un perfil de demostración.
+
+Los PDF se generaron con ReportLab, se renderizaron con Poppler y se revisaron: constancia corta, descripción larga distribuida en varias páginas, reporte con resultados y reporte vacío. Se corrigió un salto de página que dejaba demasiado espacio antes de una descripción extensa. Esto valida el contenido de los archivos, no el selector nativo de archivos de Windows o Android.
+
+Se aplicó `20260918184510_municipal_reports` al proyecto municipal. El asesor no detectó nuevos problemas de seguridad; conserva el aviso de protección de contraseñas y 14 índices sin uso, con las referencias de remediación enlazadas arriba.
+
+Las cuatro cuentas reales del piloto consultaron el reporte general, Mis pendientes y un intervalo de ingreso. Cada respuesta vacía generó correctamente el CSV y el PDF; una constancia para un identificador inexistente fue rechazada. Ambas funciones rechazaron llamadas anónimas con HTTP 401. Las sesiones de comprobación se cerraron con alcance local. La base conserva cero solicitantes y cero expedientes: las constancias con contenido y los reportes con volumen se verificaron en pruebas aisladas.
 
 ## Límites de esta validación
 

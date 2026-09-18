@@ -17,6 +17,8 @@ Un ciudadano presenta una solicitud; Mesa de Partes la registra; un área la rev
 - Historial generado en servidor e inmodificable desde los clientes.
 - Adjuntos privados PDF, PNG y JPEG, hasta 10 MB; verificación de firma de formato y SHA-256 al descargar.
 - Exportación CSV de la página visible, con trámite y responsable, sin documentos de identidad y con protección ante fórmulas.
+- Constancia de registro PDF por expediente, con identidad parcial y situación al emitir la copia.
+- Reportes completos de los resultados filtrados: CSV e indicadores PDF por estado, prioridad y área; corte consistente, permisos por área y límite explícito de 10000 resultados.
 - Interfaz adaptable con navegación lateral en escritorio y menú en móvil; los estados siempre tienen texto.
 - Demostración con datos ficticios aislados por sesión, sin escribir en Supabase.
 - Identidad de Chiclayo, catorce gerencias verificadas y un punto de recepción para el piloto.
@@ -99,6 +101,8 @@ El módulo [Administración](docs/ADMINISTRACION.md) permite gestionar áreas, f
 
 La guía de [expedientes y bandeja de trabajo](docs/EXPEDIENTES.md) explica cómo vincular trámites, asignar responsables y organizar pendientes.
 
+La guía de [constancias y reportes](docs/REPORTES.md) explica las descargas PDF y CSV, los indicadores y el alcance de cada cuenta.
+
 ```text
 src/main.py                  Entrada del empaquetador Flet
 src/munigest/ui.py            Pantallas y navegación
@@ -106,6 +110,9 @@ src/munigest/admin_ui.py      Administración de catálogos y perfiles
 src/munigest/administration.py Validaciones de Administración
 src/munigest/work_ui.py       Bandeja y organización de expedientes
 src/munigest/work_queue.py    Filtros y fechas objetivo internas
+src/munigest/report_ui.py     Pantalla de reportes y descargas
+src/munigest/reports.py       Filtros, indicadores y CSV completo
+src/munigest/pdf_exports.py   Constancias y resúmenes PDF
 src/munigest/domain.py        Validaciones y reglas del flujo
 src/munigest/repository.py    Sesiones, API y almacenamiento de Supabase
 src/munigest/demo.py          Demostración aislada

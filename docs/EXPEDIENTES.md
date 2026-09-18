@@ -44,7 +44,7 @@ Después de cambiar campos, pulsar **Aplicar filtros**. Los accesos rápidos sus
 
 Las tarjetas identifican **Objetivo vencido**, **Objetivo hoy** y **Objetivo en próximos 3 días** mediante texto. Son avisos dentro de la aplicación, no correos, notificaciones push ni alertas de vencimiento legal. Se actualizan al cargar la bandeja.
 
-**Exportar página CSV** incluye los expedientes visibles con trámite y responsable. Omite documentos de identidad y contactos, y conserva la protección frente a fórmulas. Todavía no es un reporte de todos los resultados filtrados.
+**Exportar página CSV** incluye los expedientes visibles con trámite y responsable. Para descargar todos los resultados de los filtros aplicados, abrir **Reportes** y elegir **CSV completo** o **Resumen PDF**. Dentro de cada expediente, **Constancia PDF** permite descargar una copia del registro y su situación actual. Ver [constancias y reportes](REPORTES.md).
 
 ## Comprobaciones
 

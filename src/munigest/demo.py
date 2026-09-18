@@ -24,6 +24,7 @@ from munigest.institution import (
     SERVICES_URL,
     TUPA_URL,
 )
+from munigest.reports import MAX_REPORT_ROWS, REPORT_LIMIT_MESSAGE, report_filters, search_term
 from munigest.work_queue import eligible_workers, matches_filters
 
 DEPARTMENTS = [
@@ -264,15 +265,155 @@ class DemoRepository:
         }
 
     async def list_cases(self, query="", status="", offset=0, limit=51, *, filters=None):
+        query = search_term(query)
         rows = [
             x
             for x in self._cases.values()
             if (not status or x["status"] == status)
-            and (not query or query.casefold() in (x["reference"] + " " + x["title"]).casefold())
+            and (
+                not query
+                or any(query.casefold() in x[k].casefold() for k in ("reference", "title"))
+            )
             and matches_filters(x, filters, (self.profile or {}).get("user_id"))
         ]
         rows.sort(key=lambda x: (x["created_at"], x["id"]), reverse=True)
         return [self._with_assignee(c) for c in rows[offset : offset + limit]]
+
+    def _export_actor(self):
+        actor = next(
+            (
+                s
+                for s in self._staff_profiles
+                if self.profile and s["user_id"] == self.profile["user_id"]
+            ),
+            None,
+        )
+        if not actor or not actor["is_active"]:
+            raise UserError("Inicia sesión con un perfil municipal activo.")
+        return actor
+
+    @staticmethod
+    def _export_can_read(actor, case):
+        return actor["role"] in {"admin", "mesa_partes"} or (
+            actor["role"] in {"gestor", "consulta"}
+            and actor.get("department_id") == case["department_id"]
+        )
+
+    async def case_report(self, query="", status="", *, filters=None):
+        actor = self._export_actor()
+        selected = report_filters(query, status, filters)
+        at_time = datetime.now(UTC)
+        from munigest.domain import MUNICIPAL_TZ
+
+        today = at_time.astimezone(MUNICIPAL_TZ).date()
+        rows = []
+        for case in self._cases.values():
+            if not self._export_can_read(actor, case):
+                continue
+            if selected["status"] and case["status"] != selected["status"]:
+                continue
+            if selected["query"] and not any(
+                selected["query"].casefold() in case[k].casefold() for k in ("reference", "title")
+            ):
+                continue
+            if not matches_filters(case, selected, actor["user_id"], today):
+                continue
+            item = self._with_assignee(case)
+            rows.append(
+                {
+                    **{
+                        k: item.get(k)
+                        for k in (
+                            "id",
+                            "reference",
+                            "title",
+                            "status",
+                            "priority",
+                            "channel",
+                            "created_at",
+                            "due_on",
+                            "version",
+                            "department_id",
+                            "procedure_id",
+                            "assigned_to",
+                        )
+                    },
+                    "department_name": item["department"]["name"],
+                    "procedure_name": (item.get("procedure_snapshot") or {}).get("name"),
+                    "assignee_name": (item.get("assignee") or {}).get("display_name"),
+                }
+            )
+            if len(rows) > MAX_REPORT_ROWS:
+                raise UserError(REPORT_LIMIT_MESSAGE)
+        rows.sort(key=lambda row: (row["created_at"], row["id"]), reverse=True)
+        area = next(
+            (d["name"] for d in self._departments if d["id"] == actor.get("department_id")),
+            "Sin área asignada",
+        )
+        return {
+            "institution_name": INSTITUTION_NAME,
+            "demo": True,
+            "issued_at": at_time.isoformat(),
+            "local_date": str(today),
+            "issued_by": actor["display_name"],
+            "scope": "Todos los expedientes" if actor["role"] in {"admin", "mesa_partes"} else area,
+            "filters": selected,
+            "filter_labels": {
+                "department_id": next(
+                    (d["name"] for d in self._departments if d["id"] == selected["department_id"]),
+                    None,
+                ),
+                "procedure_id": next(
+                    (p["name"] for p in self._procedures if p["id"] == selected["procedure_id"]),
+                    None,
+                ),
+                "assignee": next(
+                    (
+                        s["display_name"]
+                        for s in self._staff_profiles
+                        if s["user_id"] == selected["assignee"]
+                    ),
+                    None,
+                ),
+            },
+            "rows": rows,
+        }
+
+    async def case_receipt(self, case_id):
+        actor = self._export_actor()
+        item = self._cases.get(case_id)
+        if not item or not self._export_can_read(actor, item):
+            raise UserError("El expediente ya no está disponible en tu área. Actualiza la bandeja.")
+        applicant = item["applicant"]
+        number = applicant["document_number"]
+        return {
+            "institution_name": INSTITUTION_NAME,
+            "demo": True,
+            "issued_at": datetime.now(UTC).isoformat(),
+            "case": {
+                **{
+                    k: item[k]
+                    for k in (
+                        "id",
+                        "reference",
+                        "title",
+                        "description",
+                        "channel",
+                        "created_at",
+                        "status",
+                        "version",
+                    )
+                },
+                "department_name": item["department"]["name"],
+                "procedure_name": (item.get("procedure_snapshot") or {}).get("name"),
+                "document_count": len(self._documents[case_id]),
+                "applicant": {
+                    "full_name": applicant["full_name"],
+                    "document_type": applicant["document_type"],
+                    "document_masked": "*" * max(0, len(number) - 4) + number[-4:],
+                },
+            },
+        }
 
     async def get_case(self, case_id):
         return self._with_assignee(self._cases[case_id])

@@ -119,6 +119,11 @@ async def show_inbox(app):
 
         await app.guard(work, e.control)
 
+    async def reports(e):
+        from munigest.report_ui import show_report
+
+        await app.guard(lambda: show_report(app), e.control)
+
     search.on_submit = apply_filter
     for field in [status, *fields.values()]:
         field.col = {"xs": 12, "md": 6, "xl": 3}
@@ -131,6 +136,9 @@ async def show_inbox(app):
         ft.OutlinedButton(
             "Exportar página CSV", icon=ft.Icons.DOWNLOAD, disabled=not app.rows, on_click=export
         )
+    )
+    actions.append(
+        ft.OutlinedButton("Reportes", icon=ft.Icons.ASSESSMENT_OUTLINED, on_click=reports)
     )
     app.content.controls = [
         app.heading(

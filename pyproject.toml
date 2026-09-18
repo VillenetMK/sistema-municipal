@@ -3,14 +3,25 @@ name = "munigest"
 version = "0.1.0"
 description = "Mesa de partes y seguimiento interno de expedientes municipales"
 requires-python = ">=3.12,<3.14"
-dependencies = ["flet==1.0.0", "httpx[socks]==0.28.1", "python-dotenv==1.1.1"]
+dependencies = [
+    "flet==1.0.0",
+    "httpx[socks]==0.28.1",
+    "python-dotenv==1.1.1",
+    "reportlab==5.0.1",
+]
 
 [project.optional-dependencies]
 desktop = ["flet-desktop==1.0.0"]
 server = ["flet-web==1.0.0"]
 
 [dependency-groups]
-dev = ["flet-cli==1.0.0", "flet-web==1.0.0", "pytest==8.4.2", "ruff==0.13.0"]
+dev = [
+    "flet-cli==1.0.0",
+    "flet-web==1.0.0",
+    "pypdf==6.10.2",
+    "pytest==8.4.2",
+    "ruff==0.13.0",
+]
 
 [tool.flet]
 org = "pe.munigest"

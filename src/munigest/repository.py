@@ -2,7 +2,6 @@
 
 import asyncio
 import hashlib
-import re
 import time
 from pathlib import PurePath
 from uuid import uuid4
@@ -18,6 +17,7 @@ from munigest.domain import (
     validate_case_work,
     validate_draft,
 )
+from munigest.reports import report_filters, search_term
 from munigest.work_queue import rest_filters
 
 
@@ -265,11 +265,25 @@ class SupabaseRepository:
         }
         if status:
             params["status"] = f"eq.{status}"
-        term = re.sub(r"[^0-9A-Za-zÀ-ÿ -]", " ", query).strip()[:60]
+        term = search_term(query)
         if term:
             params["or"] = f"(reference.ilike.*{term}*,title.ilike.*{term}*)"
         params.update(rest_filters(filters, (self.profile or {}).get("user_id")))
         return (await self._request("GET", "/rest/v1/cases", params=params)).json()
+
+    async def case_report(self, query="", status="", *, filters=None):
+        return (
+            await self._request(
+                "POST",
+                "/rest/v1/rpc/export_case_report",
+                json={"report_filters": report_filters(query, status, filters)},
+            )
+        ).json()
+
+    async def case_receipt(self, case_id):
+        return (
+            await self._request("POST", "/rest/v1/rpc/case_receipt", json={"case_id": case_id})
+        ).json()
 
     async def get_case(self, case_id):
         rows = (

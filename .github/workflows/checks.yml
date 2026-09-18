@@ -42,3 +42,4 @@ jobs:
           psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/database_contract.sql
           psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/administration_contract.sql
           psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/work_queue_contract.sql
+          psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/reports_contract.sql
