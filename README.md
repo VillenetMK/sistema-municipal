@@ -1,4 +1,21 @@
 # MuniGest Chiclayo
+### Gestión de expedientes · Piloto en Python
+
+Aplicación para registrar solicitudes, derivarlas entre áreas y consultar el historial de cada expediente. Incluye una demostración con datos ficticios para explorar el flujo sin una cuenta.
+
+| En un vistazo | Detalle |
+|---|---|
+| Problema | Dar seguimiento al recorrido de una solicitud y a las actuaciones de cada área |
+| Tecnologías | Python, Flet, Supabase y PostgreSQL |
+| Funciones | Roles, bandejas, derivaciones, historial, adjuntos y reportes |
+| Demostración | Local, con registros ficticios aislados por sesión |
+| Estado | Piloto interno 0.1; validación municipal, despliegue y empaquetado pendientes |
+
+**Explorar:** [ejecutar la demostración](#ejecutar-la-demostración) · [alcance](docs/ALCANCE.md) · [validación](docs/VALIDACION.md) · [modelo de seguridad](docs/SEGURIDAD.md)
+
+Este repositorio presenta un piloto orientado a la Municipalidad Provincial de Chiclayo. No acredita una implementación oficial ni sustituye sus servicios digitales existentes.
+
+---
 
 Piloto para la **Municipalidad Provincial de Chiclayo**, orientado a mesa de partes y seguimiento interno de expedientes. Aplicación escrita en Python, interfaz Flet y backend Supabase. Repositorio de trabajo: `VillenetMK/sistema-municipal`.
 
