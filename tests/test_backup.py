@@ -108,3 +108,15 @@ def test_valid_manifest_cannot_hide_missing_document():
     encrypted = encrypt_members(members, "private-passphrase-for-tests")
     with pytest.raises(BackupError, match="documentos"):
         decrypt_members(encrypted, "private-passphrase-for-tests")
+
+
+def test_archived_migration_accepts_timestamp_alignment_only_with_identical_content():
+    snapshot, content = snapshot_fixture()
+    members = collect_members(snapshot, lambda _: content)
+    original = next(n for n in members if n.endswith("_municipal_accounts.sql"))
+    archived = "migrations/20260923132741_municipal_accounts.sql"
+    members[archived] = members.pop(original)
+    assert "accept_staff_invitation" in restore_sql(members)
+    members[archived] += b"\n-- changed"
+    with pytest.raises(BackupError, match="migración"):
+        restore_sql(members)

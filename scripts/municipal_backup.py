@@ -297,7 +297,16 @@ def restore_sql(members, root=ROOT):
     )
     statements.append(bootstrap)
     for name in sorted(n for n in members if n.startswith("migrations/")):
+        if not re.fullmatch(r"migrations/\d{14}_[a-z_0-9]+\.sql", name):
+            raise BackupError("Nombre de migración inválido.")
         source = root / "supabase" / name
+        if not source.is_file():
+            # Supabase asigna el timestamp al aplicar por API. Una copia anterior
+            # puede conservar el nombre generado por CLI; exigir nombre lógico y bytes idénticos.
+            logical_name = Path(name).name.split("_", 1)[1]
+            matches = list((root / "supabase/migrations").glob(f"*_{logical_name}"))
+            if len(matches) == 1:
+                source = matches[0]
         if not source.is_file() or source.read_bytes() != members[name]:
             raise BackupError(
                 "Una migración no coincide con este repositorio. Usa la revisión del respaldo."
