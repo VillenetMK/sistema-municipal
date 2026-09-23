@@ -1,0 +1,126 @@
+name: APK Android
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/android.yml'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'src/**'
+      - 'scripts/prepare_client.py'
+      - 'scripts/android_smoke.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Compilar y probar (${{ matrix.mode }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [supabase, demo]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Herramientas Python
+        run: |
+          python -m pip install uv==0.12.11
+          uv sync --frozen
+          uv run ruff check src tests scripts run.py
+          uv run --group operations pytest -q
+      - name: Caché de herramientas de compilación
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/flutter
+            ~/.flet
+            ~/.pub-cache
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: android-flet-1.0.0-${{ runner.os }}-${{ matrix.mode }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
+          restore-keys: |
+            android-flet-1.0.0-${{ runner.os }}-${{ matrix.mode }}-
+      - name: Preparar configuración pública
+        env:
+          APP_MODE: ${{ matrix.mode }}
+        run: |
+          cp .env.example .env
+          uv run python scripts/prepare_client.py --mode "$APP_MODE"
+      - name: Compilar APK universal
+        env:
+          APP_MODE: ${{ matrix.mode }}
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          bundle=pe.munigest.chiclayo
+          if [ "$APP_MODE" = demo ]; then bundle=pe.munigest.chiclayo.demo; fi
+          uv run flet build apk --yes --no-rich-output --skip-flutter-doctor --python-version 3.13 --bundle-id "$bundle" --build-number "$BUILD_NUMBER" --output dist
+          mv dist/*.apk "dist/MuniGest-Chiclayo-${APP_MODE}.apk"
+          cd dist
+          sha256sum *.apk > SHA256SUMS.txt
+      - name: Conservar APK compilado
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ matrix.mode }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Habilitar aceleración del emulador
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Probar instalación, pantallas y archivos
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          ram-size: 2048M
+          disk-size: 4096M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: uv run python scripts/android_smoke.py --mode ${{ matrix.mode }} --apk dist/MuniGest-Chiclayo-${{ matrix.mode }}.apk
+      - name: Evidencia del emulador
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pruebas-android-${{ matrix.mode }}
+          path: artifacts/android/
+          if-no-files-found: ignore
+          retention-days: 30
+
+  publish:
+    name: Publicar APK del piloto
+    needs: build-test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: apk-supabase
+          path: dist
+      - name: Publicar versión comprobada
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_NUMBER: ${{ github.run_number }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          gh release create "android-piloto-$BUILD_NUMBER" dist/*.apk dist/SHA256SUMS.txt --target "$COMMIT_SHA" --prerelease --title "MuniGest Chiclayo · Android piloto $BUILD_NUMBER" --notes-file docs/ANDROID_RELEASE.md

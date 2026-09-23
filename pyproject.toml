@@ -28,11 +28,31 @@ operations = [
 
 [tool.flet]
 org = "pe.munigest"
+bundle_id = "pe.munigest.chiclayo"
 product = "MuniGest Chiclayo"
 company = "MuniGest - Piloto municipal"
 
 [tool.flet.app]
 path = "src"
+
+[tool.flet.android]
+min_sdk_version = 24
+target_arch = ["arm64-v8a", "armeabi-v7a", "x86_64"]
+# PDF usa las fuentes Vera mediante rutas reales; no pueden quedarse dentro de un ZIP.
+extract_packages = ["reportlab"]
+# El piloto se instala descargando un APK, sin pasar por Google Play.
+legacy_packaging = true
+
+[tool.flet.android.manifest_application]
+allowBackup = "false"
+
+[tool.flet.android.permission]
+"android.permission.INTERNET" = true
+# FilePicker usa el selector del sistema, sin acceso general al almacenamiento.
+"android.permission.READ_EXTERNAL_STORAGE" = false
+"android.permission.WRITE_EXTERNAL_STORAGE" = false
+"android.permission.READ_MEDIA_IMAGES" = false
+"android.permission.READ_MEDIA_VIDEO" = false
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
