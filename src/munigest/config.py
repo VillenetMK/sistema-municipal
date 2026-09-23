@@ -4,6 +4,7 @@ import base64
 import json
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
@@ -26,7 +27,9 @@ class Settings:
 
     @classmethod
     def from_env(cls):
-        load_dotenv(override=False)
+        # En un APK solo existen .pyc y las rutas de compilación ya no existen.
+        # La búsqueda automática de dotenv por stack falla en ese caso.
+        load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=False)
 
         def setting(name, default=""):
             return os.getenv(name, BUILD_CONFIG.get(name, default))

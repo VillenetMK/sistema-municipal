@@ -39,6 +39,9 @@ def find(text, *, timeout=35, scroll=False):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         root = hierarchy()
+        if any("Error running app" in label(n) for n in root.iter("node")):
+            capture("fallo-arranque")
+            raise AssertionError("El APK muestra un error de arranque; revisar logcat.")
         matches = [
             n
             for n in root.iter("node")
@@ -56,6 +59,7 @@ def find(text, *, timeout=35, scroll=False):
 
 def tap(text, **kwargs):
     node = find(text, **kwargs)
+    print(f"Android: {text}", flush=True)
     bounds = [int(n) for n in re.findall(r"\d+", node.get("bounds", ""))]
     if len(bounds) != 4 or bounds[2] <= bounds[0] or bounds[3] <= bounds[1]:
         raise AssertionError(f"Control sin superficie visible: {text}")
@@ -70,6 +74,7 @@ def tap(text, **kwargs):
 
 
 def capture(name):
+    print(f"Captura: {name}", flush=True)
     OUTPUT.mkdir(parents=True, exist_ok=True)
     (OUTPUT / f"{name}.png").write_bytes(adb("exec-out", "screencap", "-p", binary=True))
     ET.ElementTree(hierarchy()).write(OUTPUT / f"{name}.xml", encoding="utf-8")

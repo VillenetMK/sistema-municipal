@@ -44,7 +44,8 @@ jobs:
           uv run ruff check src tests scripts run.py
           uv run --group operations pytest -q
       - name: Caché de herramientas de compilación
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
+        id: android-cache
         with:
           path: |
             ~/flutter
@@ -72,6 +73,17 @@ jobs:
           mv dist/*.apk "dist/MuniGest-Chiclayo-${APP_MODE}.apk"
           cd dist
           sha256sum *.apk > SHA256SUMS.txt
+      - name: Guardar herramientas tras compilar
+        if: steps.android-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/flutter
+            ~/.flet
+            ~/.pub-cache
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.android-cache.outputs.cache-primary-key }}
       - name: Conservar APK compilado
         uses: actions/upload-artifact@v4
         with:

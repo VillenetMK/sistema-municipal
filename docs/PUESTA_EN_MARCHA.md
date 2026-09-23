@@ -84,18 +84,20 @@ El repositorio incluye Dockerfile, Compose y una instalación sin dependencias d
 
 ## 6. Empaquetado nativo
 
+Para instalar el APK del piloto, consultar [Android: descarga, compilación y pruebas](ANDROID.md). Las compilaciones comprobadas se publican desde GitHub Actions.
+
 El script siguiente lee `.env`, valida el proyecto y genera un módulo local ignorado por Git con configuración pública. No contiene contraseñas ni claves secretas.
 
 ```bash
 uv run python scripts/prepare_client.py --mode demo
-uv run flet build apk
+uv run flet build apk --yes --python-version 3.13 --bundle-id pe.munigest.chiclayo.demo
 ```
 
 Para un cliente real, después de configurar `.env`:
 
 ```bash
 uv run python scripts/prepare_client.py --mode supabase
-uv run flet build apk
+uv run flet build apk --yes --python-version 3.13
 ```
 
 Windows se compila en Windows:
