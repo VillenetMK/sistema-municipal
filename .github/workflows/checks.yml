@@ -15,7 +15,7 @@ jobs:
           python-version: '3.12'
       - name: Instalar uv
         run: python -m pip install uv==0.12.11
-      - run: uv sync --frozen
+      - run: uv sync --frozen --group operations
       - run: uv run ruff check src tests scripts run.py
       - run: uv run pytest -q
   database:
@@ -43,3 +43,13 @@ jobs:
           psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/administration_contract.sql
           psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/work_queue_contract.sql
           psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/reports_contract.sql
+          psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/accounts_contract.sql
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install uv==0.12.11
+      - run: uv sync --frozen --group operations
+      - name: Restaurar respaldo en otra base vacía
+        run: |
+          createdb -h localhost -U postgres munigest_restore
+          uv run --group operations python -m scripts.check_backup_restore

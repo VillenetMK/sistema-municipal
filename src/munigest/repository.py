@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import httpx
 
+from munigest.accounts import AccountOperations
 from munigest.administration import validate_admin_record
 from munigest.domain import (
     SessionExpired,
@@ -21,7 +22,7 @@ from munigest.reports import report_filters, search_term
 from munigest.work_queue import rest_filters
 
 
-class SupabaseRepository:
+class SupabaseRepository(AccountOperations):
     def __init__(self, settings, transport=None):
         settings.validate()
         self.login_aliases = (

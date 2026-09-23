@@ -223,6 +223,21 @@ class MunicipalApp:
                 ),
             ]
         )
+        if not is_demo:
+            from munigest.account_ui import AccountScreen
+
+            accounts = AccountScreen(self)
+            form.extend(
+                [
+                    ft.TextButton(
+                        "Olvidé mi contraseña", on_click=accounts.public_handler("recovery")
+                    ),
+                    ft.TextButton("Activar invitación", on_click=accounts.public_handler("signup")),
+                    ft.TextButton(
+                        "Confirmar mi correo", on_click=accounts.public_handler("confirm")
+                    ),
+                ]
+            )
         card = panel(form, width=440)
         self.page.add(
             ft.SafeArea(

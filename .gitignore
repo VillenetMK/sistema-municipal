@@ -10,6 +10,7 @@ build/
 dist/
 *.log
 artifacts/
+*.mgb
 supabase/.temp/
 supabase/.branches/
 .DS_Store

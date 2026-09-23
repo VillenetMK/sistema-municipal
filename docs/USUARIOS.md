@@ -9,7 +9,7 @@ El alta utiliza los cuatro roles ya implementados. Para uso operativo, cada trab
 | `gestor` | Expedientes asignados a su área y actuaciones permitidas | Área real del trabajador |
 | `consulta` | Lectura de expedientes de su área | Área real del trabajador |
 
-El rol `admin` de la aplicación no da acceso al panel de Supabase ni a su clave administrativa. La creación de identidades se realiza con la herramienta operativa descrita aquí o desde Supabase Auth. Las áreas sugeridas no designan a ningún funcionario real.
+El rol `admin` de la aplicación no da acceso al panel de Supabase ni a su clave administrativa. El administrador puede crear [invitaciones desde la aplicación](CUENTAS.md); también se conserva la herramienta operativa descrita aquí y el alta desde Supabase Auth. Las áreas sugeridas no designan a ningún funcionario real.
 
 Para modificar perfiles existentes, entrar en **Administración → Personal → Editar e historial**. Allí se cambia nombre, rol, área o estado, registrando un motivo. Ver [Administración](ADMINISTRACION.md). Las cuentas nuevas siguen el procedimiento de alta de este documento.
 

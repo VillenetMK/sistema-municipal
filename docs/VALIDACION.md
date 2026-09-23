@@ -1,7 +1,7 @@
 # Validación de la versión 0.1
 
 Fecha: 16 de septiembre de 2026.
-Última actualización: 18 de septiembre de 2026.
+Última actualización: 23 de septiembre de 2026.
 
 ## Resultados comprobados
 
@@ -74,13 +74,27 @@ Se aplicó `20260918184510_municipal_reports` al proyecto municipal. El asesor n
 
 Las cuatro cuentas reales del piloto consultaron el reporte general, Mis pendientes y un intervalo de ingreso. Cada respuesta vacía generó correctamente el CSV y el PDF; una constancia para un identificador inexistente fue rechazada. Ambas funciones rechazaron llamadas anónimas con HTTP 401. Las sesiones de comprobación se cerraron con alcance local. La base conserva cero solicitantes y cero expedientes: las constancias con contenido y los reportes con volumen se verificaron en pruebas aisladas.
 
+## Validación de cuentas y respaldos
+
+El 23 de septiembre pasaron 113 pruebas Python, Ruff y cinco contratos SQL sobre las siete migraciones en PGlite. Las pruebas cubren invitaciones de un solo uso, caducidad, revocación, administrador inactivo, rechazo de escalada por metadata, auditoría y permisos. Recuperación y confirmación se probaron con respuestas Auth simuladas, incluidos errores y cierre de sesiones temporales. Se construyeron las nuevas pantallas a anchos 390 y 1280.
+
+Se aplicó la migración de cuentas al proyecto municipal. Con las sesiones reales del piloto, solo Administrador pudo listar invitaciones; Mesa de partes, Gestor y Consulta fueron rechazados. Se cerraron esas sesiones con alcance local. No se crearon usuarios reales adicionales ni se enviaron correos externos. La configuración SMTP y la entrega real a un buzón siguen sin verificarse.
+
+El respaldo cifrado del 23/09/2026 conserva 31 filas en 13 tablas: incluye cuatro identidades Auth, cuatro cuentas y sus cuatro perfiles; 16 áreas, una ficha de trámite, un evento administrativo y la configuración institucional. La base conserva cero expedientes, solicitantes, invitaciones y adjuntos. Las filas se restauraron y compararon mediante sus tipos PostgreSQL en una base PGlite aislada; un segundo intento sobre el destino ocupado fue rechazado.
+
+Por separado, se verificó una copia cifrada con un expediente ficticio, su solicitante, dos eventos y un adjunto: se restauraron las filas y los bytes del archivo. Esos datos solo existen en el entorno local. También se probaron contraseña de respaldo incorrecta, archivo alterado, adjunto ausente, proyecto equivocado y rutas inseguras. El workflow incorpora el mismo ensayo de respaldo en dos bases PostgreSQL 17 separadas.
+
+Estos ensayos comprueban datos y documentos; no equivalen a recuperar los servicios Auth/Storage en otro proyecto alojado. La herramienta limita el ensayo a una base local vacía y no ofrece sobrescritura de producción. Ver [alcance y uso del respaldo](RESPALDOS.md).
+
+El asesor de seguridad mantiene el aviso conocido de protección contra contraseñas filtradas. Añade un aviso informativo por RLS sin políticas en `private.staff_invitations`: es intencional, pues ningún cliente puede leer esa tabla directamente; solo las funciones con autorización de administrador acceden a ella. Los índices nuevos todavía no tienen uso operativo. No se cambió el plan ni la contraseña del piloto.
+
 ## Límites de esta validación
 
 El 17 de septiembre se corrigió el panel vacío después del acceso: los encabezados, las tarjetas, la búsqueda y el historial mezclaban `wrap=True` con hijos `expand=True`. En Flet 1.0.0, [Row usa Wrap al activar el salto de línea](https://github.com/flet-dev/flet/blob/v1.0.0/packages/flet/lib/src/controls/row.dart) y [el control expandido requiere un padre Flex](https://github.com/flet-dev/flet/blob/v1.0.0/packages/flet/lib/src/controls/base_controls.dart). Se eliminaron las combinaciones incompatibles conservando el ajuste del texto. La prueba de regresión falló antes del cambio con ambos conjuntos de datos y pasó después; también pasaron las 46 pruebas Python y Ruff. El navegador de revisión bloqueó la dirección local, por lo que queda pendiente confirmar visualmente esta corrección en Windows.
 
 La comprobación de pantallas construye controles con la versión instalada de Flet; no equivale a una revisión visual de píxeles. El navegador de revisión no pudo abrir la dirección local de este entorno. Se verificaron por separado el arranque HTTP y la construcción de los controles.
 
-Las políticas se probaron en un PostgreSQL aislado con esquemas Auth y Storage mínimos; la API real se comprobó como cliente anónimo y con las cuatro cuentas del piloto. Las comprobaciones autenticadas cubren acceso, perfiles, lectura sin expedientes y rechazo de edición de perfiles; no equivalen a un recorrido completo con documentación municipal. Faltan pruebas integrales con usuarios municipales reales, cargas y descargas desde dispositivos reales, accesibilidad con lectores de pantalla, concurrencia bajo carga y restauración de respaldos.
+Las políticas se probaron en un PostgreSQL aislado con esquemas Auth y Storage mínimos; la API real se comprobó como cliente anónimo y con las cuatro cuentas del piloto. Las comprobaciones autenticadas cubren acceso, perfiles, lectura sin expedientes y rechazo de edición de perfiles; no equivalen a un recorrido completo con documentación municipal. Faltan pruebas integrales con usuarios municipales reales, cargas y descargas desde dispositivos reales, accesibilidad con lectores de pantalla, concurrencia bajo carga y recuperación integral en un proyecto Supabase de reemplazo.
 
 No se compilaron APK, instaladores Windows/Linux ni paquetes iOS/macOS. No se publicó la aplicación web. Las capacidades de despliegue y empaquetado están documentadas, no certificadas para todos los destinos.
 

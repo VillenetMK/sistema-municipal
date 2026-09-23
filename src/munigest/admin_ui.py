@@ -113,6 +113,13 @@ class AdministrationScreen:
             ),
         ]
         if self.entity == "staff_profiles":
+            from munigest.account_ui import AccountScreen
+
+            accounts = AccountScreen(self.app)
+
+            async def invitations(_):
+                await self.app.guard(accounts.show_invitations)
+
             controls.append(
                 panel(
                     [
@@ -122,8 +129,12 @@ class AdministrationScreen:
                             "Gestor: atención de su área. Consulta: lectura de su área."
                         ),
                         small(
-                            "Aquí se administran cuentas existentes. El alta de una cuenta nueva se realiza con "
-                            "la herramienta de alta de usuarios del proyecto."
+                            "Crea invitaciones con correo, rol y área. Cada persona confirma su correo y elige su contraseña."
+                        ),
+                        ft.FilledButton(
+                            "Usuarios e invitaciones",
+                            on_click=invitations,
+                            disabled=self.app.settings.mode == "demo",
                         ),
                     ]
                 )

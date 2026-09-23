@@ -97,7 +97,7 @@ Entrar con una de las cuentas de prueba ya entregadas para el piloto, o crear un
 
 Para la cuenta administradora del piloto, escribir `admin` en **Usuario o correo** y usar la contraseña entregada por separado. El correo completo también sigue siendo válido.
 
-Se crearon y probaron cuatro cuentas del piloto, una por rol; sus credenciales se entregaron fuera del repositorio. Para crear cuentas de trabajadores identificados se incluye una [herramienta operativa de alta](docs/USUARIOS.md). El [despliegue del servidor](docs/DESPLIEGUE.md) incluye Dockerfile y Compose. Las cuentas de trabajadores reales y la publicación del servicio siguen pendientes.
+Se crearon y probaron cuatro cuentas del piloto, una por rol; sus credenciales se entregaron fuera del repositorio. Para crear cuentas individuales se incluyen [invitaciones desde la aplicación](docs/CUENTAS.md) y una [herramienta operativa de alta](docs/USUARIOS.md). El [despliegue del servidor](docs/DESPLIEGUE.md) incluye Dockerfile y Compose. Las cuentas de trabajadores reales y la publicación del servicio siguen pendientes.
 
 La aplicación no incluye claves secretas, contraseñas de base de datos ni credenciales `service_role`. Las sesiones se mantienen en memoria y se renuevan de forma asíncrona. Un fallo de conexión real nunca activa automáticamente la demostración.
 
@@ -119,6 +119,8 @@ El módulo [Administración](docs/ADMINISTRACION.md) permite gestionar áreas, f
 La guía de [expedientes y bandeja de trabajo](docs/EXPEDIENTES.md) explica cómo vincular trámites, asignar responsables y organizar pendientes.
 
 La guía de [constancias y reportes](docs/REPORTES.md) explica las descargas PDF y CSV, los indicadores y el alcance de cada cuenta.
+
+La guía de [cuentas e invitaciones](docs/CUENTAS.md) explica el alta desde Administración y la recuperación de contraseña por correo. La guía de [respaldos](docs/RESPALDOS.md) incluye copia cifrada de datos y adjuntos, verificación y ensayo de restauración en una base local vacía.
 
 ```text
 src/main.py                  Entrada del empaquetador Flet
@@ -144,7 +146,7 @@ tests/                       Pruebas Python y contrato SQL
 ## Verificación
 
 ```bash
-uv run pytest -q
+uv run --group operations pytest -q
 uv run ruff check src tests scripts run.py
 ```
 
