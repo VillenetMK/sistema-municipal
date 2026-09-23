@@ -41,7 +41,7 @@ Un ciudadano presenta una solicitud; Mesa de Partes la registra; un área la rev
 - Identidad de Chiclayo, catorce gerencias verificadas y un punto de recepción para el piloto.
 - Referencias al organigrama y TUPA 2026, con accesos a los portales oficiales desde el catálogo.
 
-**Estado: base funcional para un piloto interno, versión 0.1.** La identidad institucional está configurada; falta la validación municipal de responsables, áreas operativas y fichas TUPA. Los instaladores nativos aún deben compilarse y probarse en dispositivos reales. No se ha publicado un servicio web.
+**Estado: base funcional para un piloto interno, versión 0.1.** La identidad institucional está configurada; falta la validación municipal de responsables, áreas operativas y fichas TUPA. El APK piloto de Android ya está compilado, probado en emulador y publicado; falta comprobarlo en un teléfono físico con una cuenta válida. Los instaladores de escritorio y el servicio web siguen pendientes.
 
 Chiclayo ya dispone de mesa de partes virtual y SGD. Este piloto conserva registros internos y todavía no se sincroniza con esos servicios. Ver [configuración de Chiclayo, fuentes y alcance de la integración](docs/CHICLAYO.md).
 
@@ -107,10 +107,12 @@ La aplicación no incluye claves secretas, contraseñas de base de datos ni cred
 |---|---|---|
 | Web | Servidor Python de Flet | Código y arranque HTTP comprobados; despliegue pendiente |
 | Windows / Linux | Cliente nativo Flet | Pantallas y lógica probadas; empaquetado y prueba de dispositivo pendientes |
-| Android | APK generado con Flet | Mismo código adaptable; compilación y prueba en teléfono pendientes |
+| Android | APK universal generado con Flet | Publicado y probado en emulador Android 15; prueba en teléfono físico pendiente |
 | macOS / iOS | Herramientas Flet y equipo macOS | Posibles ampliaciones; todavía sin validación de plataforma |
 
 Las instrucciones de compilación están en [puesta en marcha](docs/PUESTA_EN_MARCHA.md). La variante web inicial usa un servidor Python; no presupone que HTTPX funcione en una exportación estática WebAssembly.
+
+**Android:** [descargar el APK piloto](https://github.com/VillenetMK/sistema-municipal/releases/tag/android-piloto-4) y consultar la [guía de instalación, firma y pruebas](docs/ANDROID.md). Lleva la configuración pública municipal; no se copia `.env` al teléfono. Las pruebas de PDF y adjuntos usan una demostración aislada; el cliente municipal comprueba arranque, conexión Auth y formularios públicos.
 
 ## Organización
 

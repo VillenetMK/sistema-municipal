@@ -5,6 +5,8 @@
 Las compilaciones que pasan las pruebas se publican como versiones piloto en
 [Releases](https://github.com/VillenetMK/sistema-municipal/releases).
 
+Versión comprobada el 23/09/2026: [Android piloto 4](https://github.com/VillenetMK/sistema-municipal/releases/tag/android-piloto-4), aproximadamente 67 MB. Ambas variantes aprobaron la [ejecución de Android](https://github.com/VillenetMK/sistema-municipal/actions/runs/35880312397).
+
 1. Abre la versión **MuniGest Chiclayo · Android piloto** y descarga
    `MuniGest-Chiclayo-supabase.apk` desde **Assets**.
 2. Abre la descarga. Si Android lo solicita, autoriza a ese navegador o gestor de

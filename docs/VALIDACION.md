@@ -7,7 +7,7 @@ Fecha: 16 de septiembre de 2026.
 
 | Comprobación | Resultado |
 |---|---|
-| Pruebas Python | 90 aprobadas, incluidos reportes completos, contenido PDF, descargas, permisos, organización de expedientes y Administración |
+| Pruebas Python | 116 aprobadas, incluidos reportes, cuentas, respaldos y arranque desde Python compilado sin los archivos originales |
 | Análisis estático Ruff | Sin errores |
 | Construcción de las pantallas | Login, resumen, bandeja, registro, detalle, catálogo y Administración (listas y formularios); anchos 390 y 1280 |
 | Composición de filas y columnas | Ningún hijo expandido dentro de un contenedor con `wrap=True` en las pantallas comprobadas |
@@ -88,6 +88,55 @@ Estos ensayos comprueban datos y documentos; no equivalen a recuperar los servic
 
 El asesor de seguridad mantiene el aviso conocido de protección contra contraseñas filtradas. Añade un aviso informativo por RLS sin políticas en `private.staff_invitations`: es intencional, pues ningún cliente puede leer esa tabla directamente; solo las funciones con autorización de administrador acceden a ella. Los índices nuevos todavía no tienen uso operativo. No se cambió el plan ni la contraseña del piloto.
 
+## Validación del APK Android
+
+El 23 de septiembre se generaron APK universales con Flet 1.0.0 y Python 3.13,
+para ARM64, ARM de 32 bits y x86_64. La configuración declara Android 7 como
+versión mínima. Se inspeccionó el archivo municipal: incluye únicamente la
+configuración pública de `lxvmwjcqdjoidgpinmgm`, sin `.env`, contraseñas ni
+herramientas administrativas; la fuente Vera del PDF se extrae como archivo.
+
+La demostración pasó el recorrido automatizado en un emulador Android 15 x86_64:
+instalación, apertura, resumen, menú, catálogo, expediente, generación y guardado
+de la constancia PDF, adjunto mediante el selector nativo y cierre de sesión.
+El PDF se recuperó del emulador y se comprobó su contenido con pypdf. Se revisaron
+las capturas del resumen, catálogo, cabecera del expediente y documento adjunto.
+El recorrido terminó sin excepciones Python ni desbordamientos de Flutter en
+logcat. Los datos y el adjunto de esta prueba solo existen en la demostración.
+
+La prueba real del APK detectó y permitió corregir dos fallos: la búsqueda
+automática de `.env` fallaba cuando solo quedaban archivos `.pyc`, y la apertura
+de un expediente conservaba el desplazamiento de la bandeja. El primero tiene
+una regresión Python con el archivo original eliminado; el segundo se comprueba
+abriendo el expediente desde una bandeja desplazada y localizando su cabecera.
+También se serializaron las descargas de dependencias nativas para evitar
+escrituras simultáneas en los metadatos ETag de Gradle.
+
+La prueba de acceso reconoce los campos por su tipo nativo y verifica que la
+contraseña esté protegida. UIAutomator no devuelve las etiquetas flotantes de
+los campos Flutter en su árbol XML, aunque sí aparecen en la captura.
+
+El cliente municipal también aprobó instalación, apertura, conexión TLS/Auth
+con rechazo de credenciales vacías, recuperación e invitación y regreso al
+inicio. Se revisaron las capturas de acceso e invitación. No se usaron cuentas
+privadas, no se enviaron correos y no se escribieron expedientes en Supabase.
+La autenticación con una cuenta válida no formó parte de esta prueba Android.
+
+Ambas variantes y la publicación terminaron correctamente en la
+[ejecución Android 4](https://github.com/VillenetMK/sistema-municipal/actions/runs/35880312397),
+correspondiente al commit `249770b08c0d854f172dbfef007d305f9784235e`.
+El [APK publicado](https://github.com/VillenetMK/sistema-municipal/releases/tag/android-piloto-4)
+ocupa 66 930 485 bytes; su SHA-256 se comprobó tanto contra `SHA256SUMS.txt` como
+contra el archivo publicado en GitHub. Las 116 pruebas Python, Ruff y los
+contratos de PostgreSQL 17 aprobaron en la
+[ejecución de comprobaciones](https://github.com/VillenetMK/sistema-municipal/actions/runs/35880312364).
+
+El cliente municipal usa firma de pruebas y requiere Internet. Falta la prueba
+en un teléfono físico con una cuenta válida, incluidos permisos del área,
+operaciones con expedientes autorizados, rotación y pérdida de conexión. No se
+certifica distribución en Google Play ni uso oficial municipal. Ver
+[instalación, firma y alcance de las pruebas](ANDROID.md).
+
 ## Límites de esta validación
 
 El 17 de septiembre se corrigió el panel vacío después del acceso: los encabezados, las tarjetas, la búsqueda y el historial mezclaban `wrap=True` con hijos `expand=True`. En Flet 1.0.0, [Row usa Wrap al activar el salto de línea](https://github.com/flet-dev/flet/blob/v1.0.0/packages/flet/lib/src/controls/row.dart) y [el control expandido requiere un padre Flex](https://github.com/flet-dev/flet/blob/v1.0.0/packages/flet/lib/src/controls/base_controls.dart). Se eliminaron las combinaciones incompatibles conservando el ajuste del texto. La prueba de regresión falló antes del cambio con ambos conjuntos de datos y pasó después; también pasaron las 46 pruebas Python y Ruff. El navegador de revisión bloqueó la dirección local, por lo que queda pendiente confirmar visualmente esta corrección en Windows.
@@ -96,7 +145,7 @@ La comprobación de pantallas construye controles con la versión instalada de F
 
 Las políticas se probaron en un PostgreSQL aislado con esquemas Auth y Storage mínimos; la API real se comprobó como cliente anónimo y con las cuatro cuentas del piloto. Las comprobaciones autenticadas cubren acceso, perfiles, lectura sin expedientes y rechazo de edición de perfiles; no equivalen a un recorrido completo con documentación municipal. Faltan pruebas integrales con usuarios municipales reales, cargas y descargas desde dispositivos reales, accesibilidad con lectores de pantalla, concurrencia bajo carga y recuperación integral en un proyecto Supabase de reemplazo.
 
-No se compilaron APK, instaladores Windows/Linux ni paquetes iOS/macOS. No se publicó la aplicación web. Las capacidades de despliegue y empaquetado están documentadas, no certificadas para todos los destinos.
+Se compilaron y probaron APK en el emulador Android descrito arriba. No se compilaron instaladores Windows/Linux ni paquetes iOS/macOS. No se publicó la aplicación web. Las capacidades de despliegue y empaquetado no están certificadas para todos los destinos.
 
 Dockerfile y Compose están preparados; su construcción no se ejecutó porque el entorno no dispone de Docker. La comprobación HTTP corresponde al proceso Python, no a una imagen construida.
 
