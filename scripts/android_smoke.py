@@ -135,7 +135,14 @@ def demo_checks():
 
 
 def supabase_checks():
-    find("Usuario o correo", timeout=90, scroll=True)
+    # UIAutomator no incluye las etiquetas flotantes de los EditText de Flutter.
+    # Esperar el título y comprobar ambos campos nativos, incluido el protegido.
+    find("Iniciar sesión", timeout=90)
+    find("Ingresar", scroll=True)
+    fields = [n for n in hierarchy().iter("node") if n.get("class") == "android.widget.EditText"]
+    if len(fields) != 2 or sum(n.get("password") == "true" for n in fields) != 1:
+        capture("fallo-campos-acceso")
+        raise AssertionError("El acceso debe mostrar usuario y contraseña protegida.")
     capture("02-inicio-supabase")
     # Una petición sin credenciales verifica TLS/Auth sin entrar en cuentas reales.
     tap("Ingresar", scroll=True)
