@@ -466,7 +466,7 @@ class MunicipalApp:
 
     def open_handler(self, case_id):
         async def handler(_):
-            await self.guard(lambda: self.detail(case_id))
+            await self.guard(lambda: self.detail(case_id, reset_scroll=True))
 
         return handler
 
@@ -625,7 +625,7 @@ class MunicipalApp:
                     error.value, error.visible = str(exc), True
                     return
                 self.notify(f"Expediente registrado: {result['reference']}")
-                await self.detail(result["id"])
+                await self.detail(result["id"], reset_scroll=True)
 
             await self.guard(work, e.control)
 
@@ -698,7 +698,7 @@ class MunicipalApp:
         ]
         self.page.update()
 
-    async def detail(self, case_id):
+    async def detail(self, case_id, *, reset_scroll=False):
         from munigest.work_ui import work_event_lines, work_panel
 
         item, events, documents, areas = await asyncio.gather(
@@ -896,6 +896,10 @@ class MunicipalApp:
             )
         )
         self.page.update()
+
+        if reset_scroll:
+            # Abrir desde una bandeja desplazada debe mostrar la cabecera del expediente.
+            await self.content.scroll_to(offset=0)
 
     async def catalog(self):
         procedures, self.departments = await asyncio.gather(

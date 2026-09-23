@@ -56,6 +56,7 @@ jobs:
           key: android-flet-1.0.0-${{ runner.os }}-${{ matrix.mode }}-${{ hashFiles('uv.lock', 'pyproject.toml') }}
           restore-keys: |
             android-flet-1.0.0-${{ runner.os }}-${{ matrix.mode }}-
+            android-flet-1.0.0-${{ runner.os }}-
       - name: Preparar configuración pública
         env:
           APP_MODE: ${{ matrix.mode }}

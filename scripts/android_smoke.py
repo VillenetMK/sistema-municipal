@@ -94,7 +94,8 @@ def demo_checks():
     capture("03-catalogo")
     menu("Expedientes")
     tap("Abrir expediente", scroll=True, timeout=65)
-    find("Constancia PDF", scroll=True)
+    # Abrir un expediente restablece la posición, aunque la bandeja estuviera abajo.
+    find("Constancia PDF")
     capture("04-expediente")
     tap("Constancia PDF")
     find("Save", timeout=45)

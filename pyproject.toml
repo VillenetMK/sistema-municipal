@@ -43,6 +43,12 @@ extract_packages = ["reportlab"]
 # El piloto se instala descargando un APK, sin pasar por Google Play.
 legacy_packaging = true
 
+[tool.flet.android.gradle_properties]
+# Las descargas de las tres ABI comparten un archivo de metadatos ETag.
+# Serializarlas evita que Gradle lea ese JSON mientras otra descarga lo escribe.
+"org.gradle.workers.max" = "1"
+"org.gradle.parallel" = "false"
+
 [tool.flet.android.manifest_application]
 allowBackup = "false"
 
