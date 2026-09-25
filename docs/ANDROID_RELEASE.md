@@ -1,5 +1,7 @@
 APK de **MuniGest Chiclayo** conectado al proyecto municipal `lxvmwjcqdjoidgpinmgm`.
 
+Diseño renovado: acceso más claro, navegación con sección activa, indicadores y expedientes con iconos, campos uniformes y filtros avanzados desplegables. Los estados conservan sus etiquetas para que la lectura no dependa del color.
+
 1. Descarga `MuniGest-Chiclayo-supabase.apk` en el teléfono.
 2. Abre el archivo y permite la instalación desde ese navegador o gestor de archivos cuando Android lo solicite.
 3. Abre **MuniGest Chiclayo** e ingresa con tu usuario habitual. Requiere conexión a Internet.

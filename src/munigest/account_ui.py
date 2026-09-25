@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import flet as ft
 
+from munigest.design import LINE, brand
 from munigest.domain import ROLES, UserError
 from munigest.ui import panel, small, timestamp
 
@@ -28,6 +29,7 @@ class AccountScreen:
 
     def public_form(self, kind, email_value=""):
         app = self.app
+        app.login_hero = app.login_card = app.login_frame = None
         email = ft.TextField(label="Correo de tu cuenta", value=email_value, max_length=254)
         code = ft.TextField(label="Código de invitación", password=True, can_reveal_password=True)
         verification = ft.TextField(
@@ -89,7 +91,12 @@ class AccountScreen:
             "confirm": "Confirmar mi correo",
             "recovery": "Recuperar contraseña",
         }
-        fields = [ft.Text(titles[kind], size=24, weight=ft.FontWeight.BOLD), email]
+        fields = [
+            brand(app.settings.name),
+            ft.Divider(height=24, color=LINE),
+            ft.Text(titles[kind], size=24, weight=ft.FontWeight.BOLD),
+            email,
+        ]
         if kind == "signup":
             fields += [
                 small(

@@ -4,6 +4,7 @@ import asyncio
 
 import flet as ft
 
+from munigest.design import INK, LINE, MUTED, section
 from munigest.domain import PRIORITIES, STATUSES, UserError, export_cases
 from munigest.ui import panel, small
 from munigest.work_queue import CLOSED, DUE_FILTERS, eligible_workers, validate_filters
@@ -125,8 +126,11 @@ async def show_inbox(app):
         await app.guard(lambda: show_report(app), e.control)
 
     search.on_submit = apply_filter
-    for field in [status, *fields.values()]:
+    search.col, status.col = {"xs": 12, "md": 8}, {"xs": 12, "md": 4}
+    search.counter = ""
+    for field in fields.values():
         field.col = {"xs": 12, "md": 6, "xl": 3}
+    active_count = sum(bool(value) for value in filters.values())
     actions = (
         [ft.FilledButton("Registrar solicitud", icon=ft.Icons.ADD, on_click=app.new_handler)]
         if app.can_register()
@@ -164,14 +168,36 @@ async def show_inbox(app):
         ),
         panel(
             [
-                search,
-                ft.ResponsiveRow([status, *fields.values()], run_spacing=14),
+                ft.ResponsiveRow([search, status], spacing=14, run_spacing=14),
+                ft.ExpansionTile(
+                    title=ft.Text(
+                        "Filtros avanzados", size=14, weight=ft.FontWeight.W_600, color=INK
+                    ),
+                    subtitle=ft.Text(
+                        f"{active_count} criterios activos"
+                        if active_count
+                        else "Área, responsable, prioridad y fechas",
+                        size=12,
+                        color=MUTED,
+                    ),
+                    leading=ft.Icon(ft.Icons.TUNE, size=20),
+                    expanded=bool(active_count),
+                    maintain_state=True,
+                    tile_padding=0,
+                    controls_padding=ft.Padding.only(top=16, bottom=8),
+                    shape=ft.RoundedRectangleBorder(radius=0),
+                    collapsed_shape=ft.RoundedRectangleBorder(radius=0),
+                    controls=[
+                        ft.ResponsiveRow(list(fields.values()), spacing=14, run_spacing=14),
+                        small(
+                            "Las fechas de ingreso incluyen el día completo en horario de Chiclayo. "
+                            "Los objetivos son internos y no representan plazos legales."
+                        ),
+                    ],
+                ),
+                ft.Divider(height=1, color=LINE),
                 ft.FilledButton(
                     "Aplicar filtros", icon=ft.Icons.FILTER_LIST, on_click=apply_filter
-                ),
-                small(
-                    "Las fechas de ingreso incluyen el día completo en horario de Chiclayo. "
-                    "Los objetivos son internos y no representan plazos legales."
                 ),
             ]
         ),
@@ -194,7 +220,7 @@ async def work_panel(app, item):
     ficha = item.get("procedure_snapshot") or {}
     assignee = item.get("assignee") or {}
     controls = [
-        ft.Text("Organización del expediente", size=20, weight=ft.FontWeight.W_600),
+        section("Organización del expediente", ft.Icons.ASSIGNMENT_IND_OUTLINED),
         ft.Text(f"Trámite: {ficha.get('name') or 'Sin trámite vinculado'}"),
         small(f"Responsable: {assignee.get('display_name') or 'Pendiente de asignación'}"),
         small(

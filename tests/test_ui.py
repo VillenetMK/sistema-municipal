@@ -97,3 +97,46 @@ def test_all_screens_build_at_desktop_and_mobile_widths(seeded):
             await app.close()
 
     asyncio.run(exercise())
+
+
+def test_navigation_marks_current_section_and_filters_survive_collapsing():
+    def walk(control):
+        yield control
+        for child in getattr(control, "controls", []):
+            yield from walk(child)
+        content = getattr(control, "content", None)
+        if isinstance(content, ft.Control):
+            yield from walk(content)
+
+    async def exercise():
+        app = MunicipalApp(PageStub(), Settings(), DemoRepository())
+        app.profile = await app.repo.sign_in()
+        app.departments = await app.repo.departments()
+        app.shell()
+        await app.navigate(1)
+        assert [button.tooltip for button in app.nav_buttons].count("Sección actual") == 1
+        assert app.nav_buttons[1].tooltip == "Sección actual"
+        tile = next(c for c in walk(app.content) if isinstance(c, ft.ExpansionTile))
+        assert not tile.expanded and tile.maintain_state
+        tile.expanded = True
+        priority = next(
+            c for c in walk(tile) if isinstance(c, ft.Dropdown) and c.label == "Prioridad"
+        )
+        priority.value = "alta"
+        tile.expanded = False
+        apply = next(
+            c
+            for c in walk(app.content)
+            if isinstance(c, ft.FilledButton) and c.content == "Aplicar filtros"
+        )
+        await apply.on_click(SimpleNamespace(control=apply))
+        assert app.filters["priority"] == "alta"
+        assert all(row["priority"] == "alta" for row in app.rows)
+        tile = next(c for c in walk(app.content) if isinstance(c, ft.ExpansionTile))
+        assert tile.expanded
+        await app.navigate(0)
+        assert app.nav_buttons[0].tooltip == "Sección actual"
+        assert app.nav_buttons[1].tooltip is None
+        await app.close()
+
+    asyncio.run(exercise())

@@ -9,6 +9,23 @@ import flet as ft
 
 from munigest.config import Settings
 from munigest.demo import DemoRepository
+from munigest.design import (
+    ACCENT,
+    INK,
+    LINE,
+    MUTED,
+    SOFT,
+    STATUS_ICONS,
+    SURFACE,
+    brand,
+    icon_badge,
+    metric,
+    panel,
+    pill,
+    section,
+    small,
+    theme,
+)
 from munigest.domain import (
     CHANNELS,
     PRIORITIES,
@@ -22,45 +39,11 @@ from munigest.institution import INSTITUTION_NAME, OFFICIAL_RESOURCES, UNIT_TYPE
 from munigest.repository import SupabaseRepository
 from munigest.work_queue import due_notice, eligible_workers
 
-INK = "#192A32"
-MUTED = "#53616A"
-LINE = "#DCE2E4"
-SURFACE = "#F4F6F7"
-ACCENT = "#164D48"
 NAV = [
     ("Resumen", ft.Icons.DASHBOARD_OUTLINED),
     ("Expedientes", ft.Icons.FOLDER_OPEN_OUTLINED),
     ("Áreas y trámites", ft.Icons.MENU_BOOK_OUTLINED),
 ]
-
-
-def panel(controls, **kwargs):
-    return ft.Container(
-        content=ft.Column(controls, spacing=14),
-        bgcolor="#FFFFFF",
-        border=ft.Border.all(1, LINE),
-        border_radius=16,
-        padding=24,
-        **kwargs,
-    )
-
-
-def small(text):
-    return ft.Text(text, size=13, color=MUTED)
-
-
-def pill(text, icon=None):
-    return ft.Container(
-        ft.Row(
-            ([ft.Icon(icon, size=15, color=INK)] if icon else [])
-            + [ft.Text(text, size=12, weight=ft.FontWeight.W_600, color=INK)],
-            spacing=6,
-            tight=True,
-        ),
-        bgcolor="#E9EEEE",
-        padding=ft.Padding.symmetric(horizontal=10, vertical=6),
-        border_radius=8,
-    )
 
 
 def timestamp(value):
@@ -96,11 +79,21 @@ class MunicipalApp:
         self.rows = []
         self.sidebar = None
         self.menu_button = None
+        self.nav_buttons = []
+        self.login_hero = None
+        self.login_card = None
+        self.login_frame = None
+        self.content_frame = None
         self.admin_screen = None
-        self.content = ft.Column(expand=True, scroll=ft.ScrollMode.AUTO, spacing=20)
+        self.content = ft.Column(
+            expand=True,
+            scroll=ft.ScrollMode.AUTO,
+            spacing=20,
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+        )
         self.picker = ft.FilePicker()
         page.title = settings.name
-        page.theme = ft.Theme(color_scheme_seed=ACCENT, use_material3=True)
+        page.theme = theme()
         page.theme_mode = ft.ThemeMode.LIGHT
         page.bgcolor = SURFACE
         page.padding = 0
@@ -117,6 +110,14 @@ class MunicipalApp:
             self.sidebar.visible = not mobile
         if self.menu_button:
             self.menu_button.visible = mobile
+        if self.login_hero:
+            self.login_hero.visible = not mobile
+        if self.login_card:
+            self.login_card.padding = 24 if mobile else 36
+        if self.login_frame:
+            self.login_frame.width = 480 if mobile else 1040
+        if self.content_frame:
+            self.content_frame.padding = 16 if mobile else 28
         self.page.update()
 
     def notify(self, message):
@@ -146,6 +147,8 @@ class MunicipalApp:
 
     def login(self):
         self.admin_screen = None
+        self.sidebar = self.menu_button = self.content_frame = None
+        self.nav_buttons = []
         self.filters, self.query, self.status, self.offset = {}, "", "", 0
         self.page.appbar = None
         self.page.drawer = None
@@ -155,12 +158,15 @@ class MunicipalApp:
             keyboard_type=ft.KeyboardType.TEXT,
             autofill_hints=ft.AutofillHint.USERNAME,
             max_length=254,
+            counter="",
+            prefix_icon=ft.Icons.PERSON_OUTLINE,
         )
         password = ft.TextField(
             label="Contraseña",
             password=True,
             can_reveal_password=True,
             autofill_hints=ft.AutofillHint.PASSWORD,
+            prefix_icon=ft.Icons.LOCK_OUTLINE,
         )
         error = ft.Text("", color="#7B2222", visible=False)
 
@@ -187,17 +193,14 @@ class MunicipalApp:
         password.on_submit = enter
         is_demo = self.settings.mode == "demo"
         form = [
-            ft.Icon(ft.Icons.ACCOUNT_BALANCE_OUTLINED, size=40, color=ACCENT),
-            ft.Text(self.settings.name, size=30, weight=ft.FontWeight.BOLD, color=INK),
-            ft.Text(INSTITUTION_NAME, size=16, color=INK),
-            ft.Text("Cada solicitud, un recorrido claro.", size=17, color=MUTED),
-            small("Piloto de gestión interna"),
-            ft.Container(height=8),
+            brand(self.settings.name),
+            ft.Divider(height=28, color=LINE),
             ft.Text(
                 "Explora la mesa de partes" if is_demo else "Iniciar sesión",
-                size=21,
-                weight=ft.FontWeight.W_600,
+                size=26,
+                weight=ft.FontWeight.BOLD,
             ),
+            small("Todo listo para continuar con tu trabajo."),
         ]
         if is_demo:
             form.extend(
@@ -210,7 +213,7 @@ class MunicipalApp:
                 ]
             )
         else:
-            form.extend([identifier, password, small("Acceso para personal municipal autorizado.")])
+            form.extend([identifier, password])
         form.extend(
             [
                 error,
@@ -218,7 +221,7 @@ class MunicipalApp:
                     "Explorar demostración" if is_demo else "Ingresar",
                     icon=ft.Icons.ARROW_FORWARD,
                     on_click=enter,
-                    width=360,
+                    width=float("inf"),
                     height=50,
                 ),
             ]
@@ -232,23 +235,116 @@ class MunicipalApp:
                     ft.TextButton(
                         "Olvidé mi contraseña", on_click=accounts.public_handler("recovery")
                     ),
-                    ft.TextButton("Activar invitación", on_click=accounts.public_handler("signup")),
-                    ft.TextButton(
-                        "Confirmar mi correo", on_click=accounts.public_handler("confirm")
+                    ft.Divider(height=16, color=LINE),
+                    small("¿Es tu primer ingreso?"),
+                    ft.Row(
+                        [
+                            ft.TextButton(
+                                "Activar invitación", on_click=accounts.public_handler("signup")
+                            ),
+                            ft.TextButton(
+                                "Confirmar mi correo", on_click=accounts.public_handler("confirm")
+                            ),
+                        ],
+                        wrap=True,
+                        spacing=0,
+                        run_spacing=0,
                     ),
                 ]
             )
-        card = panel(form, width=440)
+        # Una composición amplia en escritorio y una sola columna en el teléfono.
+        # El formulario conserva su estado al cambiar el tamaño de la ventana.
+        mobile = (self.page.width or 1100) < 850
+        self.login_card = panel(form, expand=True, padding=24 if mobile else 36, border=None)
+        self.login_hero = ft.Container(
+            ft.Column(
+                [
+                    icon_badge(ft.Icons.ACCOUNT_BALANCE_OUTLINED, dark=True, size=56),
+                    ft.Text(
+                        "MUNICIPALIDAD PROVINCIAL\nDE CHICLAYO",
+                        size=12,
+                        color="#D6E7E4",
+                        weight=ft.FontWeight.W_600,
+                    ),
+                    ft.Text(
+                        "Cada solicitud,\nun recorrido claro.",
+                        size=38,
+                        weight=ft.FontWeight.BOLD,
+                        color="#FFFFFF",
+                    ),
+                    ft.Text(
+                        "Un espacio para recibir, organizar y dar seguimiento a las solicitudes ciudadanas.",
+                        size=16,
+                        color="#D6E7E4",
+                    ),
+                    ft.Divider(color="#486269", height=24),
+                    *[
+                        ft.Row(
+                            [
+                                icon_badge(icon, dark=True, size=36),
+                                ft.Column(
+                                    [
+                                        ft.Text(title, color="#FFFFFF", weight=ft.FontWeight.W_600),
+                                        ft.Text(description, size=12, color="#D6E7E4"),
+                                    ],
+                                    spacing=3,
+                                    expand=True,
+                                ),
+                            ],
+                            spacing=12,
+                        )
+                        for icon, title, description in [
+                            (
+                                ft.Icons.ADD_TASK,
+                                "Recibe y registra",
+                                "Cada expediente tiene un código único.",
+                            ),
+                            (
+                                ft.Icons.FOLDER_OPEN_OUTLINED,
+                                "Organiza la atención",
+                                "Áreas, responsables y documentos juntos.",
+                            ),
+                            (
+                                ft.Icons.HISTORY,
+                                "Sigue cada avance",
+                                "Consulta las actuaciones de cada solicitud.",
+                            ),
+                        ]
+                    ],
+                ],
+                spacing=20,
+            ),
+            bgcolor=INK,
+            padding=36,
+            expand=True,
+            visible=not mobile,
+        )
+        self.login_frame = ft.Container(
+            ft.Row(
+                [self.login_hero, self.login_card],
+                spacing=0,
+                intrinsic_height=True,
+                vertical_alignment=ft.CrossAxisAlignment.STRETCH,
+            ),
+            width=480 if mobile else 1040,
+            border=ft.Border.all(1, LINE),
+            border_radius=20,
+            clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
+        )
         self.page.add(
             ft.SafeArea(
                 ft.Container(
                     ft.Column(
-                        [card, small("Mesa de partes · Expedientes · Trazabilidad")],
+                        [
+                            self.login_frame,
+                            small("Piloto de gestión interna · Acceso para personal autorizado"),
+                        ],
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                         alignment=ft.MainAxisAlignment.CENTER,
                         scroll=ft.ScrollMode.AUTO,
+                        spacing=20,
                     ),
-                    padding=24,
+                    padding=20,
                     alignment=ft.Alignment.CENTER,
                     expand=True,
                 ),
@@ -276,6 +372,7 @@ class MunicipalApp:
 
     def shell(self):
         self.page.controls.clear()
+        self.login_hero = self.login_card = self.login_frame = None
         mobile = (self.page.width or 1100) < 850
 
         async def open_menu(_):
@@ -289,8 +386,10 @@ class MunicipalApp:
         )
         self.page.appbar = ft.AppBar(
             leading=self.menu_button,
-            title=ft.Text(self.settings.name, weight=ft.FontWeight.BOLD, color=INK),
+            title=ft.Text(self.settings.name, size=20, weight=ft.FontWeight.BOLD, color=INK),
             bgcolor="#FFFFFF",
+            elevation=0,
+            toolbar_height=64,
             actions=[ft.IconButton(ft.Icons.LOGOUT, tooltip="Cerrar sesión", on_click=self.logout)],
         )
 
@@ -308,27 +407,47 @@ class MunicipalApp:
                 ft.NavigationDrawerDestination(label=name, icon=icon) for name, icon in navigation
             ],
             on_change=drawer_change,
+            bgcolor="#FFFFFF",
+            indicator_color=SOFT,
         )
         nav_controls = [
-            ft.Text("GESTIÓN MUNICIPAL", size=11, weight=ft.FontWeight.BOLD, color=MUTED),
-            ft.Text(self.institution, size=19, weight=ft.FontWeight.W_600, color=INK),
-            ft.Divider(color=LINE),
+            icon_badge(ft.Icons.ACCOUNT_BALANCE_OUTLINED),
+            ft.Text(self.institution, size=16, weight=ft.FontWeight.W_600, color=INK),
+            small("Mesa de partes y seguimiento"),
+            ft.Divider(color=LINE, height=28),
+            ft.Text("ESPACIO DE TRABAJO", size=10, weight=ft.FontWeight.BOLD, color=MUTED),
         ]
-        nav_controls += [
-            ft.TextButton(name, icon=icon, on_click=self.nav_handler(i), width=208, height=48)
+        self.nav_buttons = [
+            ft.TextButton(name, icon=icon, on_click=self.nav_handler(i), width=224, height=48)
             for i, (name, icon) in enumerate(navigation)
         ]
+        nav_controls += self.nav_buttons
         nav_controls += [
             ft.Container(expand=True),
             ft.Divider(color=LINE),
-            ft.Text(self.profile["display_name"], weight=ft.FontWeight.W_600, size=14),
-            small(ROLES[self.profile["role"]]),
+            ft.Row(
+                [
+                    icon_badge(ft.Icons.PERSON_OUTLINE, size=36),
+                    ft.Column(
+                        [
+                            ft.Text(
+                                self.profile["display_name"], weight=ft.FontWeight.W_600, size=13
+                            ),
+                            small(ROLES[self.profile["role"]]),
+                        ],
+                        expand=True,
+                        spacing=3,
+                    ),
+                ],
+                spacing=10,
+            ),
         ]
         self.sidebar = ft.Container(
-            ft.Column(nav_controls, expand=True),
-            width=244,
+            ft.Column(nav_controls, expand=True, spacing=10),
+            width=264,
             padding=20,
             bgcolor="#FFFFFF",
+            border=ft.Border(right=ft.BorderSide(1, LINE)),
             visible=not mobile,
         )
         main = ft.Column(expand=True, spacing=0)
@@ -345,11 +464,13 @@ class MunicipalApp:
                     padding=12,
                 )
             )
-        main.controls.append(
-            ft.Container(
-                self.content, expand=True, padding=ft.Padding.symmetric(horizontal=24, vertical=22)
-            )
+        self.content_frame = ft.Container(
+            ft.Container(self.content, width=1240, expand=True),
+            expand=True,
+            padding=16 if mobile else 28,
+            alignment=ft.Alignment.TOP_CENTER,
         )
+        main.controls.append(self.content_frame)
         self.page.add(
             ft.SafeArea(
                 ft.Row([self.sidebar, ft.Container(main, expand=True)], spacing=0, expand=True),
@@ -358,20 +479,47 @@ class MunicipalApp:
         )
         self.page.update()
 
+    def update_navigation(self):
+        for i, button in enumerate(self.nav_buttons):
+            active = i == self.screen
+            button.style = ft.ButtonStyle(
+                bgcolor=SOFT if active else "#FFFFFF",
+                color=INK if active else MUTED,
+                side=ft.BorderSide(2 if active else 0, ACCENT if active else "#FFFFFF"),
+                shape=ft.RoundedRectangleBorder(radius=10),
+                alignment=ft.Alignment.CENTER_LEFT,
+                padding=ft.Padding.symmetric(horizontal=14),
+                text_style=ft.TextStyle(
+                    size=14, weight=ft.FontWeight.BOLD if active else ft.FontWeight.W_500
+                ),
+            )
+            button.tooltip = "Sección actual" if active else None
+
     def heading(self, title, subtitle, actions=None):
         return ft.Column(
             [
-                ft.Text(title, size=28, weight=ft.FontWeight.BOLD, color=INK),
+                ft.Text("GESTIÓN MUNICIPAL", size=10, weight=ft.FontWeight.W_600, color=MUTED),
+                ft.Text(title, size=26, weight=ft.FontWeight.BOLD, color=INK),
                 small(subtitle),
-                ft.Row(actions or [], wrap=True, spacing=10),
-            ],
-            spacing=8,
+            ]
+            + (
+                [
+                    ft.Container(
+                        ft.Row(actions, wrap=True, spacing=10, run_spacing=10),
+                        padding=ft.Padding.only(top=8),
+                    )
+                ]
+                if actions
+                else []
+            ),
+            spacing=6,
         )
 
     async def navigate(self, index):
         if index == 3 and (not self.profile or self.profile["role"] != "admin"):
             raise UserError("Solo un administrador puede abrir Administración.")
         self.screen = index
+        self.update_navigation()
         if self.page.drawer:
             self.page.drawer.selected_index = index
         self.content.controls = [ft.ProgressBar(), small("Cargando información…")]
@@ -405,24 +553,13 @@ class MunicipalApp:
     async def dashboard(self):
         metrics, recent = await asyncio.gather(self.repo.metrics(), self.repo.list_cases(limit=5))
         stats = []
-        for label, key, icon in [
-            ("Expedientes", "total", ft.Icons.FOLDER_OPEN_OUTLINED),
-            ("Pendientes", "pending", ft.Icons.SCHEDULE),
-            ("Objetivo vencido", "overdue", ft.Icons.PRIORITY_HIGH),
-            ("Atendidos", "resolved", ft.Icons.TASK_ALT),
+        for label, key, icon, caption in [
+            ("Expedientes", "total", ft.Icons.FOLDER_OPEN_OUTLINED, "Disponibles para tu perfil"),
+            ("Pendientes", "pending", ft.Icons.SCHEDULE, "Por continuar su atención"),
+            ("Objetivo vencido", "overdue", ft.Icons.PRIORITY_HIGH, "Fecha interna superada"),
+            ("Atendidos", "resolved", ft.Icons.TASK_ALT, "Con atención registrada"),
         ]:
-            stats.append(
-                panel(
-                    [
-                        ft.Row(
-                            [small(label), ft.Icon(icon, size=21, color=MUTED)],
-                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                        ),
-                        ft.Text(str(metrics[key]), size=34, weight=ft.FontWeight.BOLD, color=INK),
-                    ],
-                    col={"xs": 6, "md": 3},
-                )
-            )
+            stats.append(metric(label, metrics[key], icon, caption, featured=key == "pending"))
         actions = (
             [ft.FilledButton("Registrar solicitud", icon=ft.Icons.ADD, on_click=self.new_handler)]
             if self.can_register()
@@ -443,7 +580,7 @@ class MunicipalApp:
             small(
                 "Los vencimientos se calculan sobre la fecha objetivo interna registrada; no representan plazos legales."
             ),
-            ft.Row([ft.Text("Actividad reciente", size=20, weight=ft.FontWeight.W_600)], wrap=True),
+            section("Actividad reciente", ft.Icons.HISTORY, "Los últimos expedientes registrados"),
         ]
         self.content.controls.extend(
             [self.case_card(x) for x in recent]
@@ -458,9 +595,7 @@ class MunicipalApp:
     def empty(self, title, message):
         return panel(
             [
-                ft.Icon(ft.Icons.INBOX_OUTLINED, size=36, color=MUTED),
-                ft.Text(title, size=20, weight=ft.FontWeight.W_600),
-                ft.Text(message, color=MUTED),
+                section(title, ft.Icons.INBOX_OUTLINED, message),
             ]
         )
 
@@ -471,7 +606,7 @@ class MunicipalApp:
         return handler
 
     def case_card(self, item):
-        tags = [pill(STATUSES[item["status"]]), small(item["department"]["name"])]
+        tags = [pill(STATUSES[item["status"]], STATUS_ICONS.get(item["status"]))]
         notice = due_notice(item)
         if notice:
             tags.append(pill(notice, ft.Icons.SCHEDULE))
@@ -483,7 +618,8 @@ class MunicipalApp:
                             ft.Text(
                                 item["reference"],
                                 weight=ft.FontWeight.BOLD,
-                                color=ACCENT,
+                                color=INK,
+                                size=12,
                             ),
                             small(timestamp(item["created_at"])),
                         ],
@@ -492,15 +628,35 @@ class MunicipalApp:
                     ),
                     ft.Text(item["title"], size=17, weight=ft.FontWeight.W_600, color=INK),
                     ft.Row(tags, wrap=True, spacing=10),
-                    small(
-                        f"Trámite: {(item.get('procedure_snapshot') or {}).get('name') or 'Sin trámite vinculado'}"
-                    ),
-                    small(
-                        f"Responsable: {(item.get('assignee') or {}).get('display_name') or 'Pendiente de asignación'}"
+                    ft.Row(
+                        [
+                            ft.Icon(ft.Icons.BUSINESS_OUTLINED, size=16, color=MUTED),
+                            ft.Text(item["department"]["name"], size=13, color=MUTED, expand=True),
+                        ],
+                        spacing=8,
                     ),
                     ft.Row(
                         [
-                            small(f"Prioridad: {PRIORITIES[item['priority']]}"),
+                            ft.Icon(ft.Icons.PERSON_OUTLINE, size=16, color=MUTED),
+                            ft.Text(
+                                (item.get("assignee") or {}).get("display_name")
+                                or "Pendiente de asignación",
+                                size=13,
+                                color=MUTED,
+                                expand=True,
+                            ),
+                        ],
+                        spacing=8,
+                    ),
+                    small(
+                        f"Trámite: {(item.get('procedure_snapshot') or {}).get('name') or 'Sin trámite vinculado'}"
+                    ),
+                    ft.Divider(height=1, color=LINE),
+                    ft.Row(
+                        [
+                            pill(
+                                f"Prioridad {PRIORITIES[item['priority']]}", ft.Icons.FLAG_OUTLINED
+                            ),
                             ft.TextButton(
                                 "Abrir expediente",
                                 icon=ft.Icons.CHEVRON_RIGHT,
@@ -511,11 +667,11 @@ class MunicipalApp:
                         wrap=True,
                     ),
                 ],
-                spacing=12,
+                spacing=10,
             ),
             bgcolor="#FFFFFF",
             border=ft.Border.all(1, LINE),
-            border_radius=12,
+            border_radius=16,
             padding=20,
         )
 
@@ -648,7 +804,11 @@ class MunicipalApp:
             ),
             panel(
                 [
-                    ft.Text("1. Solicitante", size=20, weight=ft.FontWeight.W_600),
+                    section(
+                        "1. Solicitante",
+                        ft.Icons.PERSON_OUTLINE,
+                        "Identificación y datos de contacto",
+                    ),
                     ft.ResponsiveRow(
                         [
                             fields[x]
@@ -666,7 +826,11 @@ class MunicipalApp:
             ),
             panel(
                 [
-                    ft.Text("2. Solicitud y destino", size=20, weight=ft.FontWeight.W_600),
+                    section(
+                        "2. Solicitud y destino",
+                        ft.Icons.EDIT_NOTE,
+                        "Información para iniciar el seguimiento",
+                    ),
                     ft.ResponsiveRow(
                         [
                             fields[x]
@@ -805,8 +969,9 @@ class MunicipalApp:
                 ft.Divider(color=LINE),
             ]
         document_controls = [
-            ft.Text("Documentos", size=20, weight=ft.FontWeight.W_600),
-            small("PDF, PNG o JPEG · máximo 10 MB por archivo"),
+            section(
+                "Documentos", ft.Icons.ATTACH_FILE, "PDF, PNG o JPEG · máximo 10 MB por archivo"
+            ),
         ]
         if can_upload:
             document_controls.append(
@@ -848,15 +1013,15 @@ class MunicipalApp:
             ),
             ft.Row(
                 [
-                    pill(STATUSES[item["status"]]),
-                    pill(PRIORITIES[item["priority"]]),
+                    pill(STATUSES[item["status"]], STATUS_ICONS.get(item["status"])),
+                    pill(f"Prioridad {PRIORITIES[item['priority']]}", ft.Icons.FLAG_OUTLINED),
                     small(item["department"]["name"]),
                 ],
                 wrap=True,
             ),
             panel(
                 [
-                    ft.Text("Solicitud", size=20, weight=ft.FontWeight.W_600),
+                    section("Solicitud", ft.Icons.DESCRIPTION_OUTLINED),
                     ft.Text(item["description"], selectable=True),
                     ft.Divider(color=LINE),
                     ft.Text(applicant["full_name"], weight=ft.FontWeight.BOLD),
@@ -877,7 +1042,7 @@ class MunicipalApp:
             self.content.controls.append(
                 panel(
                     [
-                        ft.Text("Registrar actuación", size=20, weight=ft.FontWeight.W_600),
+                        section("Registrar actuación", ft.Icons.EDIT_NOTE),
                         target,
                         department,
                         note,
@@ -890,7 +1055,7 @@ class MunicipalApp:
         self.content.controls.append(
             panel(
                 [
-                    ft.Text("Historial del expediente", size=20, weight=ft.FontWeight.W_600),
+                    section("Historial del expediente", ft.Icons.HISTORY),
                     *timeline,
                 ]
             )
@@ -926,7 +1091,7 @@ class MunicipalApp:
             ),
             panel(
                 [
-                    ft.Text("Áreas disponibles", size=20, weight=ft.FontWeight.W_600),
+                    section("Áreas disponibles", ft.Icons.ACCOUNT_TREE_OUTLINED),
                     small(
                         "Selección inicial de gerencias del organigrama publicado "
                         "y un punto de recepción para el piloto."
@@ -943,7 +1108,7 @@ class MunicipalApp:
                     ],
                 ]
             ),
-            ft.Text("Catálogo de trámites", size=20, weight=ft.FontWeight.W_600),
+            section("Catálogo de trámites", ft.Icons.MENU_BOOK_OUTLINED),
         ]
         for item in procedures:
             department = next(

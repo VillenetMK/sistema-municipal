@@ -18,6 +18,39 @@ jobs:
       - run: uv sync --frozen --group operations
       - run: uv run ruff check src tests scripts run.py
       - run: uv run pytest -q
+  visual:
+    name: Interfaz nativa en escritorio y móvil
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      LIBGL_ALWAYS_SOFTWARE: '1'
+      GDK_BACKEND: x11
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar entorno de escritorio
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb xauth libgtk-3-0t64 libmpv2
+          python -m pip install uv==0.12.11
+          uv sync --frozen --extra desktop
+      - name: Capturar pantallas reales de Flet
+        run: |
+          mkdir -p artifacts/design
+          set -o pipefail
+          xvfb-run -a -s "-screen 0 1440x1100x24" timeout 180s uv run --extra desktop python scripts/visual_smoke.py 2>&1 | tee artifacts/design/native.log
+          if rg -q 'RenderFlex overflowed|Incorrect use of ParentDataWidget|BoxConstraints forces an infinite|Operación de interfaz fallida' artifacts/design/native.log; then exit 1; fi
+      - name: Conservar evidencia visual
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: revision-diseno
+          path: artifacts/design/
+          if-no-files-found: error
+          retention-days: 30
   database:
     runs-on: ubuntu-latest
     services:
