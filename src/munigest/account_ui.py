@@ -140,6 +140,7 @@ class AccountScreen:
                         scroll=ft.ScrollMode.AUTO,
                     ),
                     padding=24,
+                    alignment=ft.Alignment.TOP_CENTER,
                     expand=True,
                 ),
                 expand=True,

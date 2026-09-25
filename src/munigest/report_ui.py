@@ -52,6 +52,7 @@ async def show_report(app):
 
     def render(report):
         summary = report_summary(report)
+        app.update_navigation(1)
         app.content.controls = [
             app.heading(
                 "Reportes de expedientes",

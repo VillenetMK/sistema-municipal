@@ -480,7 +480,11 @@ class MunicipalApp:
         )
         self.page.update()
 
-    def update_navigation(self):
+    def update_navigation(self, index=None):
+        if index is not None:
+            self.screen = index
+        if self.page.drawer:
+            self.page.drawer.selected_index = self.screen
         for i, button in enumerate(self.nav_buttons):
             active = i == self.screen
             button.style = ft.ButtonStyle(
@@ -519,10 +523,7 @@ class MunicipalApp:
     async def navigate(self, index):
         if index == 3 and (not self.profile or self.profile["role"] != "admin"):
             raise UserError("Solo un administrador puede abrir Administración.")
-        self.screen = index
-        self.update_navigation()
-        if self.page.drawer:
-            self.page.drawer.selected_index = index
+        self.update_navigation(index)
         self.content.controls = [ft.ProgressBar(), small("Cargando información…")]
         self.page.update()
         if index == 0:
@@ -685,6 +686,7 @@ class MunicipalApp:
         if not self.can_register():
             self.notify("Tu perfil no puede registrar solicitudes.")
             return
+        self.update_navigation(1)
         request_id = str(uuid4())
         fields = {
             "procedure_id": ft.Dropdown(
@@ -873,6 +875,7 @@ class MunicipalApp:
             self.repo.departments(include_inactive=True),
         )
         applicant = item["applicant"]
+        self.update_navigation(1)
         can_change = self.profile["role"] != "consulta" and item["status"] != "archivado"
         can_upload = can_change and item["status"] != "atendido"
         options = [item["status"], *TRANSITIONS[item["status"]]]
