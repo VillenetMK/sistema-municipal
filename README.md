@@ -9,7 +9,7 @@ Aplicación para registrar solicitudes, derivarlas entre áreas y consultar el h
 | Tecnologías | Python, Flet, Supabase y PostgreSQL |
 | Funciones | Roles, bandejas, derivaciones, historial, adjuntos y reportes |
 | Demostración | Local, con registros ficticios aislados por sesión |
-| Estado | Piloto interno 0.1; validación municipal, despliegue y empaquetado pendientes |
+| Estado | Piloto interno 0.1; APK Android publicado; validación municipal y despliegue del servicio pendientes |
 
 **Explorar:** [ejecutar la demostración](#ejecutar-la-demostración) · [alcance](docs/ALCANCE.md) · [validación](docs/VALIDACION.md) · [modelo de seguridad](docs/SEGURIDAD.md)
 
@@ -37,6 +37,7 @@ Un ciudadano presenta una solicitud; Mesa de Partes la registra; un área la rev
 - Constancia de registro PDF por expediente, con identidad parcial y situación al emitir la copia.
 - Reportes completos de los resultados filtrados: CSV e indicadores PDF por estado, prioridad y área; corte consistente, permisos por área y límite explícito de 10000 resultados.
 - Interfaz adaptable con navegación lateral en escritorio y menú en móvil; los estados siempre tienen texto.
+- Diseño renovado con sección activa, indicadores con iconos, formularios alineados y filtros avanzados desplegables. [Ver capturas y revisión del diseño](docs/DISENO.md).
 - Demostración con datos ficticios aislados por sesión, sin escribir en Supabase.
 - Identidad de Chiclayo, catorce gerencias verificadas y un punto de recepción para el piloto.
 - Referencias al organigrama y TUPA 2026, con accesos a los portales oficiales desde el catálogo.
@@ -106,13 +107,13 @@ La aplicación no incluye claves secretas, contraseñas de base de datos ni cred
 | Destino | Ejecución prevista | Estado de esta entrega |
 |---|---|---|
 | Web | Servidor Python de Flet | Código y arranque HTTP comprobados; despliegue pendiente |
-| Windows / Linux | Cliente nativo Flet | Pantallas y lógica probadas; empaquetado y prueba de dispositivo pendientes |
+| Windows / Linux | Cliente nativo Flet | Lógica probada y capturas del cliente Linux revisadas a 390 y 1280 píxeles; empaquetado y comprobación en Windows pendientes |
 | Android | APK universal generado con Flet | Publicado y probado en emulador Android 15; prueba en teléfono físico pendiente |
 | macOS / iOS | Herramientas Flet y equipo macOS | Posibles ampliaciones; todavía sin validación de plataforma |
 
 Las instrucciones de compilación están en [puesta en marcha](docs/PUESTA_EN_MARCHA.md). La variante web inicial usa un servidor Python; no presupone que HTTPX funcione en una exportación estática WebAssembly.
 
-**Android:** [descargar el APK piloto](https://github.com/VillenetMK/sistema-municipal/releases/tag/android-piloto-4) y consultar la [guía de instalación, firma y pruebas](docs/ANDROID.md). Lleva la configuración pública municipal; no se copia `.env` al teléfono. Las pruebas de PDF y adjuntos usan una demostración aislada; el cliente municipal comprueba arranque, conexión Auth y formularios públicos.
+**Android:** [descargar el APK piloto](https://github.com/VillenetMK/sistema-municipal/releases/tag/android-piloto-8) y consultar la [guía de instalación, firma y pruebas](docs/ANDROID.md). Lleva la configuración pública municipal; no se copia `.env` al teléfono. Las pruebas de PDF y adjuntos usan una demostración aislada; el cliente municipal comprueba arranque, conexión Auth y formularios públicos.
 
 ## Organización
 
@@ -127,6 +128,7 @@ La guía de [cuentas e invitaciones](docs/CUENTAS.md) explica el alta desde Admi
 ```text
 src/main.py                  Entrada del empaquetador Flet
 src/munigest/ui.py            Pantallas y navegación
+src/munigest/design.py        Tema, contraste y componentes visuales comunes
 src/munigest/admin_ui.py      Administración de catálogos y perfiles
 src/munigest/administration.py Validaciones de Administración
 src/munigest/work_ui.py       Bandeja y organización de expedientes
@@ -152,7 +154,7 @@ uv run --group operations pytest -q
 uv run ruff check src tests scripts run.py
 ```
 
-El workflow de GitHub comprueba Python y ejecuta los contratos de permisos sobre PostgreSQL 17 aislado. Los scripts SQL de `tests/` son exclusivamente para bases locales de prueba; no se ejecutan sobre la base municipal.
+El workflow de GitHub comprueba Python, captura veinte pantallas del cliente nativo y ejecuta los contratos de permisos sobre PostgreSQL 17 aislado. Los scripts SQL de `tests/` son exclusivamente para bases locales de prueba; no se ejecutan sobre la base municipal.
 
 Ver [informe de validación](docs/VALIDACION.md), [alcance y decisiones](docs/ALCANCE.md) y [modelo de seguridad](docs/SEGURIDAD.md).
 

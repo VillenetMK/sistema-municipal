@@ -1,15 +1,16 @@
 # Validación de la versión 0.1
 
 Fecha: 16 de septiembre de 2026.
-Última actualización: 23 de septiembre de 2026.
+Última actualización: 25 de septiembre de 2026.
 
 ## Resultados comprobados
 
 | Comprobación | Resultado |
 |---|---|
-| Pruebas Python | 116 aprobadas, incluidos reportes, cuentas, respaldos y arranque desde Python compilado sin los archivos originales |
+| Pruebas Python | 117 aprobadas, incluidos reportes, cuentas, respaldos, filtros al cerrar el panel, navegación activa y arranque desde Python compilado sin los archivos originales |
 | Análisis estático Ruff | Sin errores |
 | Construcción de las pantallas | Login, resumen, bandeja, registro, detalle, catálogo y Administración (listas y formularios); anchos 390 y 1280 |
+| Revisión visual nativa | Veinte capturas del cliente Flet en Linux, a 390 × 844 y 1280 × 960; revisión de acceso, recuperación, resumen, filtros, registro, detalle, catálogo, Administración y reportes |
 | Composición de filas y columnas | Ningún hijo expandido dentro de un contenedor con `wrap=True` en las pantallas comprobadas |
 | Arranque del servidor Flet | HTTP 200 usando PORT; configuración inválida rechazada antes del arranque |
 | Herramienta Python de alta | API simulada: cuatro roles, aislamiento de proyecto, correos confirmados, reanudación, permisos existentes y fallos parciales |
@@ -137,11 +138,47 @@ operaciones con expedientes autorizados, rotación y pérdida de conexión. No s
 certifica distribución en Google Play ni uso oficial municipal. Ver
 [instalación, firma y alcance de las pruebas](ANDROID.md).
 
+## Revisión del diseño del 25 de septiembre
+
+El código `2b046b73297ad5cbf1d0532d5b3ae14c588d4455` aprobó las 117 pruebas
+Python, Ruff, los contratos PostgreSQL 17 y las veinte capturas nativas en la
+[ejecución 25](https://github.com/VillenetMK/sistema-municipal/actions/runs/36165124312).
+Las imágenes se obtuvieron desde el cliente Flutter/Flet, con datos de
+`DemoRepository`, sin escribir ni consultar expedientes municipales.
+
+La inspección permitió ajustar el ancho real de los selectores, la alineación
+de los indicadores en móvil, el centrado de recuperación y la selección de
+sección en formularios y reportes. El registro no contiene desbordamientos de
+Flutter ni errores de operación de la interfaz. El cierre del cliente Linux
+produce avisos del motor y del bus de accesibilidad del entorno sin escritorio;
+no se evaluó un lector de pantalla.
+
+Se conservan las [capturas y criterios de diseño](DISENO.md). La prueba Python
+añadida verifica que cerrar los filtros avanzados conserve sus valores al
+aplicarlos y que la marca de sección activa siga la navegación.
+
+La [ejecución Android 8](https://github.com/VillenetMK/sistema-municipal/actions/runs/36165124296)
+del mismo código aprobó las dos variantes y publicó el
+[APK renovado](https://github.com/VillenetMK/sistema-municipal/releases/tag/android-piloto-8).
+Se revisaron las capturas del acceso municipal, resumen de demostración y
+documento adjunto. El resultado del emulador confirma navegación, constancia PDF,
+guardado y adjunto en la demostración; el cliente municipal confirma arranque,
+rechazo de acceso vacío, recuperación e invitación. No se usaron credenciales
+privadas ni se cargaron expedientes en la base municipal.
+
+El activo publicado tiene 66 944 797 bytes. GitHub informa el SHA-256
+`8a0804a056c7858a4b41748b0acbc0e39e69c4f413a5bdabb16e2e95b7305fb5`.
+La comprobación en un teléfono físico con una cuenta válida sigue pendiente.
+
 ## Límites de esta validación
 
 El 17 de septiembre se corrigió el panel vacío después del acceso: los encabezados, las tarjetas, la búsqueda y el historial mezclaban `wrap=True` con hijos `expand=True`. En Flet 1.0.0, [Row usa Wrap al activar el salto de línea](https://github.com/flet-dev/flet/blob/v1.0.0/packages/flet/lib/src/controls/row.dart) y [el control expandido requiere un padre Flex](https://github.com/flet-dev/flet/blob/v1.0.0/packages/flet/lib/src/controls/base_controls.dart). Se eliminaron las combinaciones incompatibles conservando el ajuste del texto. La prueba de regresión falló antes del cambio con ambos conjuntos de datos y pasó después; también pasaron las 46 pruebas Python y Ruff. El navegador de revisión bloqueó la dirección local, por lo que queda pendiente confirmar visualmente esta corrección en Windows.
 
-La comprobación de pantallas construye controles con la versión instalada de Flet; no equivale a una revisión visual de píxeles. El navegador de revisión no pudo abrir la dirección local de este entorno. Se verificaron por separado el arranque HTTP y la construcción de los controles.
+La comprobación Python de pantallas construye controles con la versión instalada
+de Flet. Desde el 25 de septiembre se complementa con las capturas nativas de
+Linux descritas arriba. La revisión inicial del navegador no pudo abrir la
+dirección local; el arranque HTTP se verificó por separado. Las capturas de Linux
+no sustituyen una comprobación en Windows ni una prueba integral en un teléfono físico.
 
 Las políticas se probaron en un PostgreSQL aislado con esquemas Auth y Storage mínimos; la API real se comprobó como cliente anónimo y con las cuatro cuentas del piloto. Las comprobaciones autenticadas cubren acceso, perfiles, lectura sin expedientes y rechazo de edición de perfiles; no equivalen a un recorrido completo con documentación municipal. Faltan pruebas integrales con usuarios municipales reales, cargas y descargas desde dispositivos reales, accesibilidad con lectores de pantalla, concurrencia bajo carga y recuperación integral en un proyecto Supabase de reemplazo.
 
