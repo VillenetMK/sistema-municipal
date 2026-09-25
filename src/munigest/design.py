@@ -75,16 +75,19 @@ def style_fields(control):
         control.text_size = 14
         control.label_style = ft.TextStyle(size=13, color=MUTED)
         control.content_padding = ft.Padding.symmetric(horizontal=14, vertical=16)
-        control.counter_style = ft.TextStyle(size=11, color=MUTED)
-        if isinstance(control, ft.Dropdown):
-            # DropdownMenu usa por defecto el ancho de sus opciones.
-            # Insets cero hace que respete la columna del formulario.
-            control.expanded_insets = ft.Padding.all(0)
-    for child in getattr(control, "controls", []) or []:
-        style_fields(child)
+        if isinstance(control, ft.TextField):
+            control.counter_style = ft.TextStyle(size=11, color=MUTED)
+    children = getattr(control, "controls", None)
+    if children is not None:
+        control.controls = [style_fields(child) for child in children]
     content = getattr(control, "content", None)
     if isinstance(content, ft.Control):
-        style_fields(content)
+        control.content = style_fields(content)
+    if isinstance(control, ft.Dropdown):
+        # El cliente Flet 1.0 activa expandedInsets mediante expand. La fila
+        # dedica ese expand al ancho, sin expandir altura en la columna con scroll.
+        control.expand = True
+        return ft.Row([control], col=control.col, spacing=0)
     return control
 
 
