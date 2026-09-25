@@ -34,7 +34,7 @@ jobs:
       - name: Instalar entorno de escritorio
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y xvfb xauth libgtk-3-0t64 libmpv2 libsecret-1-0
+          sudo apt-get install -y xvfb xauth libgtk-3-0t64 libmpv2 libsecret-1-0 libgles2 libegl1 libgl1-mesa-dri
           python -m pip install uv==0.12.11
           uv sync --frozen --extra desktop
       - name: Capturar pantallas reales de Flet
