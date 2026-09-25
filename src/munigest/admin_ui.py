@@ -6,6 +6,7 @@ from uuid import uuid4
 import flet as ft
 
 from munigest.administration import ENTITIES
+from munigest.design import ACCENT, INK, SOFT
 from munigest.domain import ROLES, UserError
 from munigest.institution import UNIT_TYPES
 
@@ -72,9 +73,18 @@ class AdministrationScreen:
 
         query.on_submit = search
         actions = [
-            ft.TextButton(
-                label, on_click=self.switch_handler(entity), disabled=entity == self.entity
+            ft.OutlinedButton(
+                label,
+                on_click=self.switch_handler(entity),
+                tooltip="Sección actual",
+                style=ft.ButtonStyle(
+                    bgcolor=SOFT,
+                    color=INK,
+                    side=ft.BorderSide(2, ACCENT),
+                ),
             )
+            if entity == self.entity
+            else ft.TextButton(label, on_click=self.switch_handler(entity))
             for entity, label in ENTITIES.items()
         ]
         controls = [

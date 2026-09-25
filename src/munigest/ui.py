@@ -386,6 +386,7 @@ class MunicipalApp:
         )
         self.page.appbar = ft.AppBar(
             leading=self.menu_button,
+            automatically_imply_leading=False,
             title=ft.Text(self.settings.name, size=20, weight=ft.FontWeight.BOLD, color=INK),
             bgcolor="#FFFFFF",
             elevation=0,

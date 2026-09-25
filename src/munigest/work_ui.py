@@ -174,7 +174,11 @@ async def show_inbox(app):
                         "Filtros avanzados", size=14, weight=ft.FontWeight.W_600, color=INK
                     ),
                     subtitle=ft.Text(
-                        f"{active_count} criterios activos"
+                        (
+                            "1 criterio activo"
+                            if active_count == 1
+                            else f"{active_count} criterios activos"
+                        )
                         if active_count
                         else "Área, responsable, prioridad y fechas",
                         size=12,
@@ -203,7 +207,9 @@ async def show_inbox(app):
         ),
         ft.Row(
             [
-                small(f"Página {app.offset // 50 + 1} · {len(app.rows)} expedientes"),
+                small(
+                    f"Página {app.offset // 50 + 1} · {len(app.rows)} {'expediente' if len(app.rows) == 1 else 'expedientes'}"
+                ),
                 ft.TextButton("Anterior", disabled=app.offset == 0, on_click=page_handler(-1)),
                 ft.TextButton("Siguiente", disabled=not has_more, on_click=page_handler(1)),
             ],

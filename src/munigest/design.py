@@ -76,6 +76,10 @@ def style_fields(control):
         control.label_style = ft.TextStyle(size=13, color=MUTED)
         control.content_padding = ft.Padding.symmetric(horizontal=14, vertical=16)
         control.counter_style = ft.TextStyle(size=11, color=MUTED)
+        if isinstance(control, ft.Dropdown):
+            # DropdownMenu usa por defecto el ancho de sus opciones.
+            # Insets cero hace que respete la columna del formulario.
+            control.expanded_insets = ft.Padding.all(0)
     for child in getattr(control, "controls", []) or []:
         style_fields(child)
     content = getattr(control, "content", None)
@@ -149,24 +153,24 @@ def metric(label, value, icon, caption, *, featured=False):
     return ft.Container(
         ft.Column(
             [
+                ft.Text(
+                    label,
+                    size=13,
+                    weight=ft.FontWeight.W_500,
+                    color=WHITE if featured else MUTED,
+                ),
                 ft.Row(
                     [
                         ft.Text(
-                            label,
-                            size=13,
-                            weight=ft.FontWeight.W_500,
-                            color=WHITE if featured else MUTED,
+                            str(value),
+                            size=32,
+                            weight=ft.FontWeight.BOLD,
+                            color=WHITE if featured else INK,
                             expand=True,
                         ),
-                        ft.Icon(icon, size=19, color=WHITE if featured else ACCENT),
+                        ft.Icon(icon, size=22, color=WHITE if featured else ACCENT),
                     ],
                     spacing=6,
-                ),
-                ft.Text(
-                    str(value),
-                    size=32,
-                    weight=ft.FontWeight.BOLD,
-                    color=WHITE if featured else INK,
                 ),
                 ft.Text(caption, size=11, color="#D6E7E4" if featured else MUTED),
             ],

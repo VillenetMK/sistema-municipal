@@ -42,6 +42,8 @@ async def main(page: ft.Page):
 
             async def capture(name, viewport=label):
                 page.update()
+                # Dejar terminar la animación del tema y el primer layout.
+                await asyncio.sleep(0.6)
                 data = await asyncio.wait_for(page.take_screenshot(pixel_ratio=1, delay=400), 20)
                 assert data.startswith(b"\x89PNG\r\n\x1a\n"), "Captura nativa inválida"
                 path = OUTPUT / f"{viewport}-{name}.png"
