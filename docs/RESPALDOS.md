@@ -48,6 +48,18 @@ Conservar el informe, comprobar conteos y revisar los documentos. El ensayo rech
 
 El ensayo anterior no sobrescribe producción. Para una recuperación real, preparar un proyecto Supabase de reemplazo, configurar sus servicios, aplicar las migraciones de la revisión del respaldo y seguir la guía oficial de restauración. Un operador debe adaptar la importación Auth a su esquema gestionado (incluidas columnas generadas), restaurar los objetos por la API de Storage, comprobar RLS con los cuatro roles y validar el acceso antes de cambiar la configuración de los clientes. El script no automatiza esa migración a un proyecto alojado.
 
-Programar copias según el uso real y conservar varias generaciones fuera del repositorio, con acceso limitado al responsable. Hacer un nuevo ensayo después de cambiar esquema o almacenamiento. Esta entrega no configura una tarea programada ni contrata backups de pago.
+Conservar varias generaciones con acceso limitado al responsable y ensayar la restauración después de cambiar el esquema o almacenamiento. El workflow descrito abajo deja preparado el horario; su activación requiere configurar los secretos. No se han contratado backups de pago.
 
 Referencias: [respaldos de Supabase](https://supabase.com/docs/guides/platform/backups), [restauración de plataforma](https://supabase.com/docs/guides/self-hosting/restore-from-platform). Las copias de base de datos por sí solas no conservan los bytes de Storage.
+
+## Automatización preparada
+
+El workflow `Respaldo municipal cifrado` puede ejecutarse desde Actions. Requiere estos secretos del repositorio:
+
+- `MUNICIPAL_BACKUP_ACCESS_TOKEN`: token de un operador autorizado para leer la base municipal.
+- `MUNICIPAL_BACKUP_STORAGE_KEY`: clave administrativa del proyecto municipal, usada solo por el proceso de respaldo para descargar Storage.
+- `MUNICIPAL_BACKUP_PASSPHRASE`: frase privada de al menos 16 caracteres. Conservar una copia recuperable fuera de GitHub y separada de los archivos.
+
+La variable de repositorio `MUNICIPAL_BACKUPS_ENABLED=true` habilita el horario diario de las 03:15 de Lima. Sin esa variable, las ejecuciones programadas omiten el trabajo; una ejecución manual sin secretos falla de forma explícita. Solo se publica el archivo cifrado como artifact, con retención de 30 días. Verificar un primer respaldo y su restauración antes de considerar esta rutina activa. Los horarios de Actions pueden sufrir retrasos.
+
+El ensayo local de restauración de las nuevas migraciones necesita PostgreSQL 17 y la extensión `http` instalada en el servidor (`postgresql-17-http` en las distribuciones que ofrecen ese paquete). No se realizan llamadas de red al restaurar las filas: se desactivan temporalmente los disparadores de usuario dentro de la transacción local y se verifican los bytes del archivo cifrado.

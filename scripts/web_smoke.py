@@ -175,6 +175,27 @@ def main():
                         p.extract_text() for p in PdfReader(pdf).pages
                     )
                     checks.extend(["exportación CSV", "reporte PDF"])
+                    page.get_by_role("button", name="Administración", exact=True).click()
+                    expect(page.get_by_text("Estado de los datos", exact=True)).to_be_visible()
+                    page.get_by_role("button", name="Solicitantes", exact=True).click()
+                    page.get_by_role("button", name="Editar e historial", exact=True).first.click()
+                    email = page.get_by_role(
+                        "textbox", name="Correo de contacto (opcional)", exact=True
+                    )
+                    email.fill("")
+                    email.press_sequentially("contacto@example.test", delay=15)
+                    reason = page.get_by_role("textbox", name="Motivo del cambio", exact=True)
+                    reason.press_sequentially(
+                        "Corrección ficticia de contacto en navegador.", delay=15
+                    )
+                    page.get_by_role("button", name="Guardar cambios", exact=True).click()
+                    expect(
+                        page.get_by_text(
+                            "Corrección ficticia de contacto en navegador.", exact=True
+                        )
+                    ).to_be_visible()
+                    checks.append("corrección de solicitante e historial administrativo")
+                    page.screenshot(path=output / "04-solicitantes.png")
                 page.set_viewport_size({"width": 390, "height": 844})
                 page.screenshot(path=output / "03-movil.png")
                 failures = [

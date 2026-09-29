@@ -9,6 +9,7 @@ insert into auth.identities values ('cccccccc-0000-4000-8000-000000000002','cccc
 insert into public.staff_profiles(user_id,display_name,role,department_id,is_active)
  select 'cccccccc-0000-4000-8000-000000000001','Prueba de restauración','admin',id,true from public.departments where code='MP';
 select set_config('request.jwt.claim.sub','cccccccc-0000-4000-8000-000000000001',false);
+select set_config('request.headers','{"authorization":"Bearer test-session-token","apikey":"sb_publishable_test_key_only"}',false);
 do $$
 declare result jsonb; object_name text; content bytea;
 begin
@@ -19,6 +20,7 @@ begin
  object_name:=result->>'id'||'/cccccccc-0000-4000-8000-000000000004.pdf';
  content:=convert_to(E'%PDF-1.7\nAdjunto ficticio del ensayo de respaldo.\n','UTF8');
  insert into storage.objects(bucket_id,name,owner_id) values('expedientes',object_name,'cccccccc-0000-4000-8000-000000000001');
+ insert into test_support.document_bytes(path,content) values(object_name,content);
  insert into public.case_documents(id,case_id,file_name,object_path,media_type,size_bytes,sha256,created_by)
  values('cccccccc-0000-4000-8000-000000000004',(result->>'id')::uuid,'ensayo.pdf',object_name,'application/pdf',length(content),
  encode(sha256(content),'hex'),'cccccccc-0000-4000-8000-000000000001');

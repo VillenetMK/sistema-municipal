@@ -41,3 +41,7 @@ Si otra persona guardó primero, la versión obsoleta se rechaza. Volver a la li
 La migración `municipal_administration` agrega versiones a los tres catálogos, historial protegido por RLS, dos RPC públicas con verificación de administrador y bloqueos que coordinan la desactivación de áreas con altas y derivaciones. Los clientes conservan prohibidas las escrituras directas de catálogos y perfiles.
 
 Las pruebas de `tests/administration_contract.sql` se ejecutan exclusivamente en PostgreSQL local y terminan con rollback. La CI aplica todas las migraciones y los contratos de permisos sobre PostgreSQL 17. El modo demostración conserva sus cambios en memoria, separados de Supabase.
+
+## Solicitantes y estado de datos
+
+La sección **Solicitantes** permite corregir fichas existentes con motivo e historial y detecta ediciones simultáneas. Los datos originales de recepción de cada expediente se conservan por separado. El panel **Estado de los datos** muestra incidencias documentales y tareas pendientes de organización. Los trámites permiten registrar la fuente y el intervalo de vigencia. Detalles en [MEJORAS_BD.md](MEJORAS_BD.md).

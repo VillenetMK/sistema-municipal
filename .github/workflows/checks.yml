@@ -66,17 +66,23 @@ jobs:
       PGPASSWORD: local-test-only
     steps:
       - uses: actions/checkout@v4
+      - name: Instalar extensión HTTP en PostgreSQL de pruebas
+        run: docker exec ${{ job.services.postgres.id }} sh -c 'apt-get update -qq && apt-get install -y postgresql-17-http'
       - name: Probar esquema y aislamiento de permisos
         run: |
           psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/bootstrap_database.sql
           for migration in supabase/migrations/*.sql; do
             psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f "$migration"
           done
+          psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/storage_http_mock.sql
           psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/database_contract.sql
           psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/administration_contract.sql
           psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/work_queue_contract.sql
           psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/reports_contract.sql
           psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/accounts_contract.sql
+          psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/applicant_integrity_contract.sql
+          psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/document_verification_contract.sql
+          psql -h localhost -U postgres -d municipal_test -v ON_ERROR_STOP=1 -f tests/catalog_sources_contract.sql
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

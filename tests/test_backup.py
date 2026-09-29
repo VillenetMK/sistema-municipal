@@ -13,6 +13,7 @@ from scripts.municipal_backup import (
     decrypt_members,
     digest,
     encrypt_members,
+    main,
     restore_sql,
     validate_snapshot,
 )
@@ -120,3 +121,16 @@ def test_archived_migration_accepts_timestamp_alignment_only_with_identical_cont
     members[archived] += b"\n-- changed"
     with pytest.raises(BackupError, match="migración"):
         restore_sql(members)
+
+
+def test_automated_backup_fails_before_network_when_secrets_missing(monkeypatch, tmp_path):
+    for name in (
+        "MUNIGEST_BACKUP_PASSPHRASE",
+        "SUPABASE_ACCESS_TOKEN",
+        "MUNIGEST_BACKUP_STORAGE_KEY",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    target = tmp_path / "backup.mgb"
+    with pytest.raises(BackupError, match="Falta configurar"):
+        main(["backup", "--non-interactive", "--output", str(target)])
+    assert not target.exists()
