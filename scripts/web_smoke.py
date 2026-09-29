@@ -188,7 +188,8 @@ def main():
                     expect(email).to_have_value("")
                     email.press_sequentially("contacto@example.test", delay=30)
                     expect(email).to_have_value("contacto@example.test")
-                    reason = page.get_by_role("textbox", name="Motivo del cambio", exact=True)
+                    # Flutter añade el texto de ayuda al nombre accesible al enfocar vacío.
+                    reason = page.get_by_role("textbox", name=re.compile(r"^Motivo del cambio"))
                     reason.click()
                     reason.press("ControlOrMeta+A")
                     reason.press("Backspace")
