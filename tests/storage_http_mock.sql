@@ -9,9 +9,9 @@ create schema test_support;
 create table test_support.document_bytes(path text primary key,content bytea not null,status integer not null default 200);
 grant usage on schema test_support to authenticated;
 grant select,insert,update,delete on test_support.document_bytes to authenticated;
-create or replace function extensions.http(extensions.http_request)
+create or replace function extensions.http(request extensions.http_request)
 returns extensions.http_response language plpgsql security definer set search_path='' as $$
-declare request alias for $1; object_name text; content bytea; status_value integer;
+declare object_name text; content bytea; status_value integer;
 begin
   if request.method::text<>'GET' or request.uri not like
     'https://lxvmwjcqdjoidgpinmgm.supabase.co/storage/v1/object/authenticated/expedientes/%' then
