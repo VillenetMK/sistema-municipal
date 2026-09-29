@@ -7,7 +7,7 @@ Fecha: 16 de septiembre de 2026.
 
 | Comprobación | Resultado |
 |---|---|
-| Pruebas Python | 138 aprobadas, incluidos reportes, cuentas, respaldos, restauración y renovación de sesión, filtros al cerrar el panel, navegación activa y arranque desde Python compilado sin los archivos originales |
+| Pruebas Python | 147 aprobadas, incluidos reportes, cuentas, respaldos, restauración y renovación de sesión, filtros al cerrar el panel, navegación activa y arranque desde Python compilado sin los archivos originales |
 | Análisis estático Ruff | Sin errores |
 | Construcción de las pantallas | Login, resumen, bandeja, registro, detalle, catálogo y Administración (listas y formularios); anchos 390 y 1280 |
 | Revisión visual nativa | Veinte capturas del cliente Flet en Linux, a 390 × 844 y 1280 × 960; revisión de acceso, recuperación, resumen, filtros, registro, detalle, catálogo, Administración y reportes |
@@ -17,16 +17,16 @@ Fecha: 16 de septiembre de 2026.
 | Cuentas del piloto en Supabase real | Cuatro creadas mediante Auth Admin; inicio de sesión, perfil activo, rol y área comprobados para cada una |
 | Restricción de edición de perfiles | La cuenta de consulta recibió HTTP 403 al intentar una actualización directa |
 | Cierre de la función temporal de alta | HTTP 410 con sesión autenticada tras sustituirla por una respuesta de operación cerrada |
-| Esquema SQL en PostgreSQL aislado (PGlite) | Las seis migraciones aplicadas correctamente, incluidos reportes con RLS |
+| Esquema SQL en PostgreSQL aislado | Once migraciones y ocho contratos: permisos, Administración, organización, reportes, cuentas, solicitantes, documentos y vigencia del catálogo |
 | Contrato SQL | Roles, aislamiento por área, idempotencia, control de versión, estados, bloqueo de edición directa, adjuntos y auditoría aprobados |
 | Contrato SQL de Administración | Roles, historial, versiones obsoletas, protección de cuenta propia, áreas en uso y validación de fichas aprobados |
 | Contrato SQL de organización | Trámite histórico, asignación válida, liberación al derivar, bloqueo de perfiles con pendientes, permisos y versiones obsoletas aprobados |
 | Contrato SQL de reportes | Consulta completa de 1501 filas, límite exacto de 10000, rechazo de 10001, filtros, fechas de Chiclayo, permisos y documento de identidad parcial |
 | Documentos PDF | Constancia de una página, descripción de varias páginas, resumen con datos y vacío; renderizados y revisados visualmente |
-| Migraciones en Supabase municipal | `20260916153745_municipal_core`, `20260916154951_municipal_access_hardening`, `20260916162200_chiclayo_institutional_configuration`, `20260917210945_municipal_administration`, `20260917214043_municipal_work_queue` y `20260918184510_municipal_reports` |
+| Migraciones en Supabase municipal | Once aplicadas; los archivos de `supabase/migrations/` conservan las versiones del servidor |
 | Configuración de Chiclayo | Nombre MPCH, 14 gerencias y un punto de recepción activos; referencia AC inactiva; fuentes oficiales registradas |
 | Consultas anónimas a la API real | `cases` y `staff_profiles` rechazadas con HTTP 401 |
-| Asesor de seguridad de Supabase | Sin avisos de tablas o RLS; un aviso Auth por protección contra contraseñas filtradas desactivada |
+| Asesor de seguridad de Supabase | Un aviso Auth por protección contra contraseñas filtradas desactivada y un informativo por RLS sin políticas en invitaciones privadas (denegación intencional) |
 | Asesor de rendimiento | 14 índices todavía sin uso; información esperable en tablas nuevas sin datos operativos |
 
 Los índices soportan filtros, relaciones y ordenaciones del flujo; no se eliminaron por falta de uso en una base nueva. [Explicación del aviso](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index).
@@ -214,3 +214,14 @@ La primera carga requiere Internet para descargar el entorno y las dependencias 
 - La variante municipal también comprobó contra Supabase real el rechazo de credenciales vacías. La variante demo aprobó constancia PDF, adjunto, CSV y reporte PDF. Las pruebas de permisos y la interfaz nativa continuaron aprobadas.
 
 La corrección no cambia usuarios, contraseñas, esquema, políticas ni registros municipales. La restauración conserva el inicio de sesión en la pestaña; no guarda formularios pendientes ni activa trabajo sin conexión. Es necesario iniciar sesión una vez después de cargar esta actualización para generar la primera sesión guardada.
+
+
+## Integridad municipal: 29 de septiembre de 2026
+
+Se aplicaron `municipal_applicant_integrity`, `municipal_document_verification`, `municipal_catalog_sources` y `municipal_storage_session_transport` al proyecto municipal. Se conservaron un expediente, un solicitante, un evento del expediente y cuatro perfiles. El expediente anterior recibió una instantánea marcada como tomada durante la migración. No se añadieron expedientes ni documentos ficticios a la base municipal.
+
+La API real confirmó el acceso administrativo, el catálogo vigente, la conservación de los datos del expediente y el diagnóstico documental habilitado. El diagnóstico devolvió cero objetos sin registrar, cero documentos sin objeto y cero documentos antiguos sin verificar (no hay adjuntos registrados). Señaló un pendiente sin responsable y sin fecha objetivo; no se inventaron esas decisiones operativas.
+
+La extensión HTTP 1.6 descargó una imagen pública de 87 133 bytes y su SHA-256 coincidió con la copia del repositorio. El endpoint autenticado de Storage respondió correctamente con JWT de sesión sin `apikey`. Los casos de tamaño, firma, huella incorrecta y errores de red se comprobaron con transporte simulado: esto no equivale a subir un documento municipal real de extremo a extremo.
+
+Los asesores conservaron los avisos previos: protección Auth contra contraseñas filtradas, denegación RLS de invitaciones privadas e índices todavía sin uso. Los respaldos diarios están preparados, pero requieren configurar secretos y activar el workflow; no se afirma que ya existan copias automáticas. El motor administrado conserva la versión 17.6.1.166. Véase [la implementación y sus límites](MEJORAS_BD.md).

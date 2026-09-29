@@ -102,7 +102,7 @@ Para la cuenta administradora del piloto, escribir `admin` en **Usuario o correo
 
 Se crearon y probaron cuatro cuentas del piloto, una por rol; sus credenciales se entregaron fuera del repositorio. Para crear cuentas individuales se incluyen [invitaciones desde la aplicación](docs/CUENTAS.md) y una [herramienta operativa de alta](docs/USUARIOS.md). El [despliegue del servidor](docs/DESPLIEGUE.md) incluye Dockerfile y Compose. Las cuentas de trabajadores reales siguen pendientes. La [versión web](docs/WEB.md) funciona directamente desde GitHub Pages.
 
-La aplicación no incluye claves secretas, contraseñas de base de datos ni credenciales `service_role`. Las sesiones se mantienen en memoria y se renuevan de forma asíncrona. Un fallo de conexión real nunca activa automáticamente la demostración.
+La aplicación no incluye claves secretas, contraseñas de base de datos ni credenciales `service_role`. Las sesiones se renuevan de forma asíncrona; el almacenamiento seguro conserva el acceso al recargar y vuelve a validar el perfil con el servidor. Un fallo de conexión real nunca activa automáticamente la demostración.
 
 ## Plataformas
 
@@ -119,11 +119,13 @@ Las instrucciones de compilación están en [puesta en marcha](docs/PUESTA_EN_MA
 
 ## Organización
 
-El módulo [Administración](docs/ADMINISTRACION.md) permite gestionar áreas, fichas de trámites y los roles, áreas y estados de cuentas existentes. Cada cambio conserva motivo y versiones anterior y posterior. Se muestra únicamente a administradores y la base vuelve a verificar el permiso en cada operación.
+El módulo [Administración](docs/ADMINISTRACION.md) permite gestionar áreas, fichas de trámites con fuente y vigencia, solicitantes y los roles, áreas y estados de cuentas existentes. Cada cambio conserva motivo y versiones anterior y posterior. Se muestra únicamente a administradores y la base vuelve a verificar el permiso en cada operación.
 
 La guía de [expedientes y bandeja de trabajo](docs/EXPEDIENTES.md) explica cómo vincular trámites, asignar responsables y organizar pendientes.
 
 La guía de [constancias y reportes](docs/REPORTES.md) explica las descargas PDF y CSV, los indicadores y el alcance de cada cuenta.
+
+La guía de [integridad de la base](docs/MEJORAS_BD.md) explica las instantáneas de solicitantes, la verificación de los bytes de adjuntos y el diagnóstico administrativo.
 
 La guía de [cuentas e invitaciones](docs/CUENTAS.md) explica el alta desde Administración y la recuperación de contraseña por correo. La guía de [respaldos](docs/RESPALDOS.md) incluye copia cifrada de datos y adjuntos, verificación y ensayo de restauración en una base local vacía.
 
