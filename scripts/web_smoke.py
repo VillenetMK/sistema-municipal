@@ -129,13 +129,18 @@ def main():
                     page.get_by_role("button", name="Abrir bandeja", exact=True).click()
                     # Las fechas de los ejemplos pueden empatar: elegir un caso abierto
                     # por su asunto, sin depender del orden de UUID aleatorios.
-                    page.get_by_role("textbox").first.fill(
-                        "Solicitud de información sobre una obra pública"
+                    search = page.get_by_role(
+                        "textbox", name="Buscar por código o asunto", exact=True
                     )
-                    page.get_by_role("button", name="Aplicar filtros", exact=True).click()
+                    # Flutter procesa las teclas en su propio modelo antes del envío.
+                    # Un fill DOM seguido de click podía enviar aún el filtro vacío.
+                    search.press_sequentially(
+                        "Solicitud de información sobre una obra pública", delay=20
+                    )
+                    search.press("Enter")
                     expect(
                         page.get_by_role("button", name="Abrir expediente", exact=True)
-                    ).to_have_count(1)
+                    ).to_have_count(1, timeout=30000)
                     page.get_by_role("button", name="Abrir expediente", exact=True).click()
                     with page.expect_download() as download:
                         page.get_by_role("button", name="Constancia PDF", exact=True).click()
