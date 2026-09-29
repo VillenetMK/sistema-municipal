@@ -63,7 +63,16 @@ def main():
                     page.screenshot(path=output / "01-resumen.png")
                     checks.append("inicio y resumen demo")
                     page.get_by_role("button", name="Abrir bandeja", exact=True).click()
-                    page.get_by_role("button", name="Abrir expediente", exact=True).first.click()
+                    # Las fechas de los ejemplos pueden empatar: elegir un caso abierto
+                    # por su asunto, sin depender del orden de UUID aleatorios.
+                    page.get_by_role("textbox").first.fill(
+                        "Solicitud de información sobre una obra pública"
+                    )
+                    page.get_by_role("button", name="Aplicar filtros", exact=True).click()
+                    expect(
+                        page.get_by_role("button", name="Abrir expediente", exact=True)
+                    ).to_have_count(1)
+                    page.get_by_role("button", name="Abrir expediente", exact=True).click()
                     with page.expect_download() as download:
                         page.get_by_role("button", name="Constancia PDF", exact=True).click()
                     receipt = output / "constancia-demo.pdf"
