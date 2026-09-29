@@ -426,7 +426,13 @@ class MunicipalApp:
             bgcolor="#FFFFFF",
             elevation=0,
             toolbar_height=64,
-            actions=[ft.IconButton(ft.Icons.LOGOUT, tooltip="Cerrar sesión", on_click=self.logout)],
+            actions=[
+                ft.IconButton(
+                    ft.Icon(ft.Icons.LOGOUT, semantics_label="Cerrar sesión"),
+                    tooltip="Cerrar sesión",
+                    on_click=self.logout,
+                )
+            ],
         )
 
         async def drawer_change(e):
