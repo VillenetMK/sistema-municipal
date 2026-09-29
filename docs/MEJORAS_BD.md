@@ -14,7 +14,9 @@ Para expedientes previos a esta mejora se copia la ficha disponible al migrar y 
 
 Un disparador del servidor comprueba permiso, propietario del objeto, ruta, bytes iniciales, extensión, tipo, tamaño y SHA-256 antes de confirmar la ficha documental. Lee el objeto de Storage usando la sesión del operador, por HTTPS y con destino fijo al proyecto municipal. La extensión `http` no concede ejecución a los clientes. No se guardan tokens en tablas, archivos de configuración ni migraciones.
 
-La lectura tiene un tiempo máximo de 8 segundos y pide como máximo 10 MiB más un byte mediante Range; también se aplica el límite de 10 MiB del bucket. Un fallo de lectura o una discrepancia cancela la ficha y su evento. La fecha `verified_at` identifica una verificación realizada por el servidor; los documentos antiguos no reciben una verificación ficticia.
+El transporte reenvía únicamente `Authorization` al endpoint autenticado de Storage. No depende de `apikey` en PostgreSQL: el gateway REST elimina ese encabezado. Se comprobó el acceso al endpoint real con la sesión del piloto y sin `apikey`, y la integridad binaria del transporte HTTP con una imagen pública conocida.
+
+La lectura conserva los límites predeterminados de la extensión `http` 1.6 del proveedor (5 segundos por petición y 1 segundo de conexión) y pide como máximo 10 MiB más un byte mediante Range; también se aplica el límite de 10 MiB del bucket. Un fallo de lectura o una discrepancia cancela la ficha y su evento. La fecha `verified_at` identifica una verificación realizada por el servidor; los documentos antiguos no reciben una verificación ficticia.
 
 `finalize_document` permite confirmar un mismo intento sin duplicar fichas ni eventos. Si el cliente pierde la respuesta, consulta si esa ficha se confirmó antes de mostrar un error. No se repite automáticamente una subida ni se elimina evidencia documental.
 

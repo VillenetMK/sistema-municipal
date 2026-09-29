@@ -5,7 +5,7 @@ insert into public.staff_profiles(user_id,display_name,role,department_id,is_act
 select 'dddddddd-0000-4000-8000-000000000001','Admin documentos','admin',id,true from public.departments where code='MP';
 set local role authenticated;
 select set_config('request.jwt.claim.sub','dddddddd-0000-4000-8000-000000000001',true);
-select set_config('request.headers','{"authorization":"Bearer test-session-token","apikey":"sb_publishable_test_key_only"}',true);
+select set_config('request.headers','{"authorization":"Bearer test-session-token"}',true);
 do $$ declare target jsonb; content bytea; meta jsonb; result jsonb; object_name text; invalid jsonb;
 begin
   target:=public.register_case(jsonb_build_object('request_id',gen_random_uuid(),
@@ -29,7 +29,7 @@ begin
   perform set_config('request.headers','{}',true);
   begin perform public.finalize_document(meta); raise exception 'NO_SESSION_ACCEPTED';
   exception when raise_exception then if sqlerrm='NO_SESSION_ACCEPTED' then raise; end if; end;
-  perform set_config('request.headers','{"authorization":"Bearer test-session-token","apikey":"sb_publishable_test_key_only"}',true);
+  perform set_config('request.headers','{"authorization":"Bearer test-session-token"}',true);
   update test_support.document_bytes set status=404 where path=object_name;
   begin perform public.finalize_document(meta); raise exception 'MISSING_STORAGE_ACCEPTED';
   exception when raise_exception then if sqlerrm='MISSING_STORAGE_ACCEPTED' then raise; end if; end;

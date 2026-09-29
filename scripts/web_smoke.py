@@ -190,6 +190,9 @@ def main():
                     expect(email).to_have_value("contacto@example.test")
                     reason = page.get_by_role("textbox", name="Motivo del cambio", exact=True)
                     reason.click()
+                    reason.press("ControlOrMeta+A")
+                    reason.press("Backspace")
+                    expect(reason).to_have_value("")
                     reason.press_sequentially(
                         "Corrección ficticia de contacto en navegador.", delay=30
                     )

@@ -17,7 +17,7 @@ begin
     'https://lxvmwjcqdjoidgpinmgm.supabase.co/storage/v1/object/authenticated/expedientes/%' then
     raise exception 'Unexpected HTTP target in test'; end if;
   if not exists(select 1 from unnest(request.headers) h where h.field='Authorization' and h.value='Bearer test-session-token')
-    or not exists(select 1 from unnest(request.headers) h where h.field='apikey' and h.value='sb_publishable_test_key_only') then
+    or exists(select 1 from unnest(request.headers) h where lower(h.field)='apikey') then
     raise exception 'Missing authentication forwarding'; end if;
   object_name:=substring(request.uri from length('https://lxvmwjcqdjoidgpinmgm.supabase.co/storage/v1/object/authenticated/expedientes/')+1);
   select b.content,b.status into content,status_value from test_support.document_bytes b where b.path=object_name;

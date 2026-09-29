@@ -15,8 +15,9 @@ comment on column public.case_documents.verified_at is
   'Instante en que el servidor leyó los bytes de Storage y comprobó firma, tamaño y SHA-256. NULL identifica registros anteriores no verificados.';
 
 create function private.fetch_document_bytes(object_path text) returns bytea
-language plpgsql security definer set search_path=''
-set http.curlopt_timeout_ms='8000' set http.curlopt_connecttimeout_ms='2000' as $$
+-- http 1.6 del proveedor limita por defecto la conexión a 1 s y la petición a 5 s.
+-- No se modifican parámetros reservados del servicio administrado.
+language plpgsql security definer set search_path='' as $$
 declare headers jsonb; token text; api_key text; response extensions.http_response;
 begin
   if auth.uid() is null or not private.document_access(object_path,true) then
