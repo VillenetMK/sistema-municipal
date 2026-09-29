@@ -175,6 +175,37 @@ def main():
                         p.extract_text() for p in PdfReader(pdf).pages
                     )
                     checks.extend(["exportación CSV", "reporte PDF"])
+                    page.get_by_role("button", name="Administración", exact=True).click()
+                    expect(page.get_by_text("Estado de los datos", exact=True)).to_be_visible()
+                    page.get_by_role("button", name="Solicitantes", exact=True).click()
+                    page.get_by_role("button", name="Editar e historial", exact=True).first.click()
+                    email = page.get_by_role(
+                        "textbox", name="Correo de contacto (opcional)", exact=True
+                    )
+                    email.click()
+                    email.press("ControlOrMeta+A")
+                    email.press("Backspace")
+                    expect(email).to_have_value("")
+                    email.press_sequentially("contacto@example.test", delay=30)
+                    expect(email).to_have_value("contacto@example.test")
+                    # Flutter añade el texto de ayuda al nombre accesible al enfocar vacío.
+                    reason = page.get_by_role("textbox", name=re.compile(r"^Motivo del cambio"))
+                    reason.click()
+                    reason.press("ControlOrMeta+A")
+                    reason.press("Backspace")
+                    expect(reason).to_have_value("")
+                    reason.press_sequentially(
+                        "Corrección ficticia de contacto en navegador.", delay=30
+                    )
+                    expect(reason).to_have_value("Corrección ficticia de contacto en navegador.")
+                    page.get_by_role("button", name="Guardar cambios", exact=True).click()
+                    expect(
+                        page.get_by_text(
+                            "Corrección ficticia de contacto en navegador.", exact=False
+                        )
+                    ).to_be_visible()
+                    checks.append("corrección de solicitante e historial administrativo")
+                    page.screenshot(path=output / "04-solicitantes.png")
                 page.set_viewport_size({"width": 390, "height": 844})
                 page.screenshot(path=output / "03-movil.png")
                 failures = [

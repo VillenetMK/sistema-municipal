@@ -84,8 +84,23 @@ def test_official_fiche_requires_source_and_blank_fee_differs_from_free():
     with pytest.raises(UserError, match="sustento"):
         validate_admin_record("procedures", draft)
     draft["legal_basis"] = "Referencia documental del procedimiento."
+    draft["source_url"] = "https://www.munichiclayo.gob.pe/mpv/"
     assert validate_admin_record("procedures", draft)["fee_pen"] is None
     assert validate_admin_record("procedures", draft | {"fee_pen": 0})["fee_pen"] == "0"
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"valid_from": "2026-10-01", "valid_until": "2026-09-30"},
+        {"valid_from": "2026-02-30"},
+        {"source_url": "http://example.test"},
+        {"is_official": True, "legal_basis": "Referencia sin fuente verificable"},
+    ],
+)
+def test_catalog_rejects_invalid_validity_or_unverifiable_source(changes):
+    with pytest.raises(UserError):
+        validate_admin_record("procedures", area() | {"is_official": False} | changes)
 
 
 def test_repository_sends_authorized_rpc_with_version_and_reason_only():

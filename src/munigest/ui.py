@@ -851,7 +851,7 @@ class MunicipalApp:
                     section(
                         "1. Solicitante",
                         ft.Icons.PERSON_OUTLINE,
-                        "Identificación y datos de contacto",
+                        "Identificación y datos de contacto para esta solicitud",
                     ),
                     ft.ResponsiveRow(
                         [
@@ -1069,6 +1069,11 @@ class MunicipalApp:
                     section("Solicitud", ft.Icons.DESCRIPTION_OUTLINED),
                     ft.Text(item["description"], selectable=True),
                     ft.Divider(color=LINE),
+                    small(
+                        "Datos conservados al actualizar el sistema"
+                        if applicant.get("origin") == "migration_current_record"
+                        else "Datos del solicitante conservados al registrar el expediente"
+                    ),
                     ft.Text(applicant["full_name"], weight=ft.FontWeight.BOLD),
                     small(f"{applicant['document_type']}: {applicant['document_number']}"),
                     small(

@@ -352,6 +352,11 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="command", required=True)
     backup = sub.add_parser("backup")
     backup.add_argument("--output", type=Path, required=True)
+    backup.add_argument(
+        "--non-interactive",
+        action="store_true",
+        help="Leer credenciales exclusivamente de variables secretas del operador/CI.",
+    )
     verify = sub.add_parser("verify")
     verify.add_argument("archive", type=Path)
     restore = sub.add_parser("restore-test")
@@ -360,14 +365,37 @@ def main(argv=None):
     restore.add_argument("--port", type=int, default=5432)
     restore.add_argument("--db-user", default="postgres")
     args = parser.parse_args(argv)
-    passphrase = getpass.getpass("Frase privada del respaldo (mínimo 16 caracteres): ")
+    automated = args.command == "backup" and args.non_interactive
+    if automated:
+        names = (
+            "MUNIGEST_BACKUP_PASSPHRASE",
+            "SUPABASE_ACCESS_TOKEN",
+            "MUNIGEST_BACKUP_STORAGE_KEY",
+        )
+        if any(not os.environ.get(name) for name in names):
+            raise BackupError(
+                "Falta configurar alguna credencial del respaldo automático. No se creó una copia."
+            )
+        passphrase = os.environ["MUNIGEST_BACKUP_PASSPHRASE"]
+        if len(passphrase) < 16:
+            raise BackupError("La frase de respaldo debe tener al menos 16 caracteres.")
+    else:
+        passphrase = getpass.getpass("Frase privada del respaldo (mínimo 16 caracteres): ")
     if args.command == "backup":
-        if passphrase != getpass.getpass("Repite la frase: "):
+        if not automated and passphrase != getpass.getpass("Repite la frase: "):
             raise BackupError("Las frases no coinciden.")
-        token = getpass.getpass("Token personal de Supabase (operador): ")
+        token = (
+            os.environ["SUPABASE_ACCESS_TOKEN"]
+            if automated
+            else getpass.getpass("Token personal de Supabase (operador): ")
+        )
         snapshot = source_snapshot(token)
         key = (
-            getpass.getpass("Clave administrativa del proyecto para descargar adjuntos: ")
+            (
+                os.environ["MUNIGEST_BACKUP_STORAGE_KEY"]
+                if automated
+                else getpass.getpass("Clave administrativa del proyecto para descargar adjuntos: ")
+            )
             if snapshot["storage_objects"]
             else ""
         )

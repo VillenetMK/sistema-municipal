@@ -44,6 +44,7 @@ DEPARTMENTS = [
 class DemoRepository:
     def __init__(self, seeded=True):
         self.profile = None
+        self._applicants = []
         self._cases = {}
         self._events = {}
         self._documents = {}
@@ -131,7 +132,18 @@ class DemoRepository:
         }
 
     async def procedures(self, include_inactive=False):
-        return copy.deepcopy([p for p in self._procedures if include_inactive or p["is_active"]])
+        return copy.deepcopy(
+            [
+                p
+                for p in self._procedures
+                if include_inactive
+                or (
+                    p["is_active"]
+                    and (not p.get("valid_from") or p["valid_from"] <= str(municipal_today()))
+                    and (not p.get("valid_until") or p["valid_until"] >= str(municipal_today()))
+                )
+            ]
+        )
 
     async def staff_directory(self):
         return copy.deepcopy(self._staff_profiles)
@@ -154,11 +166,18 @@ class DemoRepository:
         if entity not in ENTITIES or offset < 0 or len(query) > 100:
             raise UserError("Sección, búsqueda o página inválida.")
         records = getattr(self, f"_{entity}")
-        name_key = "display_name" if entity == "staff_profiles" else "name"
+        name_key = (
+            "full_name"
+            if entity == "applicants"
+            else "display_name"
+            if entity == "staff_profiles"
+            else "name"
+        )
         rows = [
             r
             for r in records
-            if query.strip().casefold() in (r[name_key] + " " + r.get("code", "")).casefold()
+            if query.strip().casefold()
+            in (r[name_key] + " " + r.get("code", r.get("document_number", ""))).casefold()
         ]
         rows.sort(key=lambda r: (r[name_key], r.get("id", r.get("user_id"))))
         return copy.deepcopy(rows[offset : offset + 51])
@@ -170,18 +189,18 @@ class DemoRepository:
         records = getattr(self, f"_{entity}")
         key = "user_id" if entity == "staff_profiles" else "id"
         old = next((r for r in records if r[key] == data[key]), None)
-        if entity == "staff_profiles" and not old:
+        if entity in {"staff_profiles", "applicants"} and not old:
             raise UserError("La cuenta debe darse de alta antes de editar su perfil.")
         if version != (old["version"] if old else 0):
             raise UserError(
                 "Otro usuario modificó el registro. Vuelve a la lista y abre la versión actual."
             )
-        if entity != "staff_profiles" and any(
+        if entity in {"departments", "procedures"} and any(
             r["code"] == data["code"] and r[key] != data[key] for r in records
         ):
             raise UserError("Ese código ya existe. Usa otro o edita el registro existente.")
         if (
-            data["is_active"]
+            data.get("is_active", True)
             and data.get("department_id")
             and not any(
                 d["id"] == data["department_id"] and d["is_active"] for d in self._departments
@@ -211,6 +230,16 @@ class DemoRepository:
                 raise UserError(
                     "Esta área conserva expedientes sin archivar. Derívalos o concluye su archivo."
                 )
+        if entity == "applicants":
+            if any(
+                r["id"] != data["id"]
+                and r["document_type"] == data["document_type"]
+                and r["document_number"] == data["document_number"]
+                for r in records
+            ):
+                raise UserError("Ese documento ya pertenece a otra ficha.")
+            if all(old.get(k) == v for k, v in data.items()):
+                raise UserError("Modifica algún dato antes de guardar la corrección.")
         result = {**(old or {}), **data, "version": version + 1}
         if (
             entity == "staff_profiles"
@@ -254,6 +283,17 @@ class DemoRepository:
                 if e["entity"] == entity and e["record_id"] == record_id
             ][:25]
         )
+
+    async def database_health(self):
+        self._admin_actor()
+        pending = [c for c in self._cases.values() if c["status"] not in {"atendido", "archivado"}]
+        return {
+            "documents_without_object": 0,
+            "unregistered_objects": 0,
+            "unverified_documents": 0,
+            "unassigned_pending": sum(not c.get("assigned_to") for c in pending),
+            "pending_without_target": sum(not c.get("due_on") for c in pending),
+        }
 
     async def metrics(self):
         values = list(self._cases.values())
@@ -451,6 +491,8 @@ class DemoRepository:
                 p
                 for p in self._procedures
                 if p["is_active"]
+                and (not p.get("valid_from") or p["valid_from"] <= str(municipal_today()))
+                and (not p.get("valid_until") or p["valid_until"] >= str(municipal_today()))
                 and (
                     p["id"] == draft.get("procedure_id")
                     if draft.get("procedure_id")
@@ -462,6 +504,30 @@ class DemoRepository:
         if not procedure:
             raise UserError("Selecciona un trámite activo del catálogo.")
         self._check_assignee(draft.get("assigned_to"), draft["department_id"])
+        person = next(
+            (
+                p
+                for p in self._applicants
+                if p["document_type"] == draft["document_type"]
+                and p["document_number"] == draft["document_number"]
+            ),
+            None,
+        )
+        if person and person["full_name"].lower() != draft["applicant_name"].lower():
+            raise UserError(
+                "Ese documento está registrado con otro nombre. Solicita su corrección en Administración → Solicitantes."
+            )
+        if person is None:
+            person = {
+                "id": str(uuid4()),
+                "full_name": draft["applicant_name"],
+                "document_type": draft["document_type"],
+                "document_number": draft["document_number"],
+                "email": draft["email"],
+                "phone": draft["phone"],
+                "version": 1,
+            }
+            self._applicants.append(person)
         self._counter += 1
         now = datetime.now(UTC).isoformat()
         case_id = str(uuid4())
@@ -485,6 +551,8 @@ class DemoRepository:
                 "phone": draft["phone"],
             },
         }
+        item["applicant_id"] = person["id"]
+        item["applicant_snapshot"] = {**item["applicant"], "origin": "received", "captured_at": now}
         self._cases[case_id] = item
         self._events[case_id] = [
             {
@@ -576,11 +644,18 @@ class DemoRepository:
             )
         if data["procedure_id"] != current.get("procedure_id"):
             procedure = next(
-                (p for p in self._procedures if p["id"] == data["procedure_id"] and p["is_active"]),
+                (
+                    p
+                    for p in self._procedures
+                    if p["id"] == data["procedure_id"]
+                    and p["is_active"]
+                    and (not p.get("valid_from") or p["valid_from"] <= str(municipal_today()))
+                    and (not p.get("valid_until") or p["valid_until"] >= str(municipal_today()))
+                ),
                 None,
             )
             if not procedure:
-                raise UserError("Selecciona un trámite activo del catálogo.")
+                raise UserError("Selecciona un trámite activo y vigente del catálogo.")
             data["procedure_snapshot"] = copy.deepcopy(procedure)
         if data["assigned_to"] != current.get("assigned_to"):
             self._check_assignee(data["assigned_to"], current["department_id"])

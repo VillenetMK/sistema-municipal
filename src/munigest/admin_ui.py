@@ -14,6 +14,11 @@ from munigest.institution import UNIT_TYPES
 from munigest.ui import panel, pill, small, timestamp
 
 FIELD_LABELS = {
+    "full_name": "Nombre o razón social",
+    "document_type": "Tipo de documento",
+    "document_number": "Número de documento",
+    "email": "Correo",
+    "phone": "Teléfono",
     "code": "Código",
     "name": "Nombre",
     "display_name": "Nombre",
@@ -27,6 +32,8 @@ FIELD_LABELS = {
     "legal_basis": "Sustento",
     "fee_pen": "Importe",
     "deadline_days": "Plazo",
+    "valid_from": "Inicio de vigencia",
+    "valid_until": "Fin de vigencia",
 }
 
 
@@ -90,15 +97,13 @@ class AdministrationScreen:
         controls = [
             self.app.heading(
                 "Administración",
-                "Organiza las áreas, el catálogo y los accesos del equipo.",
+                "Organiza las áreas, los trámites, el personal y las fichas de solicitantes.",
                 actions,
             ),
             panel(
                 [
                     ft.Text(ENTITIES[self.entity], size=22, weight=ft.FontWeight.BOLD),
-                    small(
-                        "Incluye registros activos e inactivos. Cada cambio conserva su historial."
-                    ),
+                    small("Cada corrección conserva su motivo, responsable e historial."),
                     query,
                     ft.Row(
                         [
@@ -113,7 +118,7 @@ class AdministrationScreen:
                                         on_click=self.edit_handler(),
                                     )
                                 ]
-                                if self.entity != "staff_profiles"
+                                if self.entity in {"departments", "procedures"}
                                 else []
                             ),
                         ],
@@ -122,6 +127,23 @@ class AdministrationScreen:
                 ]
             ),
         ]
+        health = await self.app.repo.database_health()
+        controls.append(
+            panel(
+                [
+                    ft.Text("Estado de los datos", weight=ft.FontWeight.BOLD),
+                    small(
+                        f"Adjuntos sin archivo: {health['documents_without_object']} · "
+                        f"Cargas sin registrar de más de una hora: {health['unregistered_objects']} · "
+                        f"Documentos pendientes de verificación: {health['unverified_documents']}"
+                    ),
+                    small(
+                        f"Expedientes pendientes sin responsable: {health['unassigned_pending']} · "
+                        f"Sin fecha objetivo: {health['pending_without_target']}"
+                    ),
+                ]
+            )
+        )
         if self.entity == "staff_profiles":
             from munigest.account_ui import AccountScreen
 
@@ -150,8 +172,14 @@ class AdministrationScreen:
                 )
             )
         for row in rows[:50]:
-            title = row.get("name") or row["display_name"]
-            subtitle = ROLES[row["role"]] if self.entity == "staff_profiles" else row["code"]
+            title = row.get("name") or row.get("full_name") or row["display_name"]
+            subtitle = (
+                f"{row['document_type']}: {row['document_number']}"
+                if self.entity == "applicants"
+                else ROLES[row["role"]]
+                if self.entity == "staff_profiles"
+                else row["code"]
+            )
             controls.append(
                 panel(
                     [
@@ -159,7 +187,13 @@ class AdministrationScreen:
                         small(subtitle),
                         ft.Row(
                             [
-                                pill("Activo" if row["is_active"] else "Inactivo"),
+                                pill(
+                                    "Ficha de solicitante"
+                                    if self.entity == "applicants"
+                                    else "Activo"
+                                    if row["is_active"]
+                                    else "Inactivo"
+                                ),
                                 ft.TextButton(
                                     "Editar e historial",
                                     icon=ft.Icons.EDIT_OUTLINED,
@@ -196,8 +230,8 @@ class AdministrationScreen:
     async def editor(self, record=None):
         self.require_admin()
         entity = self.entity
-        if entity == "staff_profiles" and record is None:
-            raise UserError("Selecciona una cuenta existente.")
+        if entity in {"staff_profiles", "applicants"} and record is None:
+            raise UserError("Selecciona un registro existente.")
         key = "user_id" if entity == "staff_profiles" else "id"
         record = dict(record or {key: str(uuid4()), "version": 0, "is_active": True})
         areas, history = await asyncio.gather(
@@ -215,7 +249,17 @@ class AdministrationScreen:
                 max_lines=6 if multiline else 1,
             )
 
-        if entity == "staff_profiles":
+        if entity == "applicants":
+            text_field("full_name", "Nombre completo o razón social", 180)
+            fields["document_type"] = ft.Dropdown(
+                label="Tipo de documento",
+                value=record["document_type"],
+                options=[ft.DropdownOption(v) for v in ("DNI", "RUC", "CE", "PAS")],
+            )
+            text_field("document_number", "Número de documento", 15)
+            text_field("email", "Correo de contacto (opcional)", 254)
+            text_field("phone", "Teléfono (opcional)", 20)
+        elif entity == "staff_profiles":
             text_field("display_name", "Nombre del usuario", 120)
             fields["role"] = ft.Dropdown(
                 label="Rol",
@@ -232,7 +276,7 @@ class AdministrationScreen:
                 options=[ft.DropdownOption(k, v) for k, v in UNIT_TYPES.items()],
             )
             text_field("source_url", "Enlace de referencia (opcional, HTTPS)", 1000)
-        else:
+        elif entity != "applicants":
             options = [ft.DropdownOption("", "Sin área asignada")]
             options.extend(ft.DropdownOption(d["id"], d["name"]) for d in areas)
             if record.get("department_id") and not any(
@@ -247,6 +291,9 @@ class AdministrationScreen:
                 label="Área asignada", value=record.get("department_id") or "", options=options
             )
         if entity == "procedures":
+            text_field("source_url", "Fuente verificable del trámite (HTTPS)", 1000)
+            text_field("valid_from", "Vigente desde (opcional, AAAA-MM-DD)", 10)
+            text_field("valid_until", "Vigente hasta (opcional, AAAA-MM-DD)", 10)
             text_field("requirements", "Requisitos de la ficha", 5000, multiline=True)
             text_field(
                 "legal_basis", "Sustento normativo y referencia de la fuente", 2000, multiline=True
@@ -257,7 +304,8 @@ class AdministrationScreen:
             )
             text_field("fee_pen", "Importe en soles (opcional)", 13)
             text_field("deadline_days", "Plazo de la ficha en días (opcional)", 4)
-        fields["is_active"] = ft.Checkbox(label="Registro activo", value=record["is_active"])
+        if entity != "applicants":
+            fields["is_active"] = ft.Checkbox(label="Registro activo", value=record["is_active"])
         own_profile = entity == "staff_profiles" and record[key] == self.app.profile["user_id"]
         if own_profile:
             fields["role"].disabled = True
@@ -307,6 +355,11 @@ class AdministrationScreen:
             if name in fields:
                 fields[name].col = 12
         description = "Los cambios se aplican al guardar y quedan registrados con tu nombre."
+        if entity == "applicants":
+            description = (
+                "Corrige la ficha actual con un motivo. Los datos declarados en expedientes "
+                "anteriores se conservan tal como fueron registrados."
+            )
         controls = [
             self.app.heading(
                 "Editar registro" if record["version"] else "Nuevo registro",

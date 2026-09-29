@@ -14,6 +14,7 @@ from munigest.domain import (
     SessionExpired,
     UserError,
     clean_text,
+    municipal_today,
     validate_attachment,
     validate_case_work,
     validate_draft,
@@ -208,7 +209,14 @@ class SupabaseRepository(AccountOperations):
                 params={
                     "select": "*",
                     "order": "name",
-                    **({} if include_inactive else {"is_active": "eq.true"}),
+                    **(
+                        {}
+                        if include_inactive
+                        else {
+                            "is_active": "eq.true",
+                            "and": f"(or(valid_from.is.null,valid_from.lte.{municipal_today()}),or(valid_until.is.null,valid_until.gte.{municipal_today()}))",
+                        }
+                    ),
                 },
             )
         ).json()
@@ -263,6 +271,9 @@ class SupabaseRepository(AccountOperations):
     async def metrics(self):
         return (await self._request("POST", "/rest/v1/rpc/case_metrics", json={})).json()
 
+    async def database_health(self):
+        return (await self._request("POST", "/rest/v1/rpc/database_health", json={})).json()
+
     async def staff_directory(self):
         rows = []
         while True:
@@ -297,7 +308,11 @@ class SupabaseRepository(AccountOperations):
         if term:
             params["or"] = f"(reference.ilike.*{term}*,title.ilike.*{term}*)"
         params.update(rest_filters(filters, (self.profile or {}).get("user_id")))
-        return (await self._request("GET", "/rest/v1/cases", params=params)).json()
+        rows = (await self._request("GET", "/rest/v1/cases", params=params)).json()
+        for row in rows:
+            if row.get("applicant_snapshot"):
+                row["applicant"] = row["applicant_snapshot"]
+        return rows
 
     async def case_report(self, query="", status="", *, filters=None):
         return (
@@ -326,6 +341,8 @@ class SupabaseRepository(AccountOperations):
         ).json()
         if not rows:
             raise UserError("El expediente ya no está disponible en tu área. Actualiza la bandeja.")
+        if rows[0].get("applicant_snapshot"):
+            rows[0]["applicant"] = rows[0]["applicant_snapshot"]
         return rows[0]
 
     async def events(self, case_id):
@@ -395,28 +412,41 @@ class SupabaseRepository(AccountOperations):
             content=content,
             headers={"Content-Type": mime, "x-upsert": "false"},
         )
+        metadata = {
+            "id": document_id,
+            "case_id": case_id,
+            "file_name": filename,
+            "object_path": path,
+            "media_type": mime,
+            "size_bytes": len(content),
+            "sha256": hashlib.sha256(content).hexdigest(),
+        }
         try:
             response = await self._request(
                 "POST",
-                "/rest/v1/case_documents",
-                headers={"Prefer": "return=representation"},
-                json={
-                    "id": document_id,
-                    "case_id": case_id,
-                    "file_name": filename,
-                    "object_path": path,
-                    "media_type": mime,
-                    "size_bytes": len(content),
-                    "sha256": hashlib.sha256(content).hexdigest(),
-                    "created_by": self.profile["user_id"],
-                },
+                "/rest/v1/rpc/finalize_document",
+                json={"metadata": metadata},
             )
         except UserError as exc:
+            # Una respuesta perdida puede ocultar una confirmación correcta.
+            # La lectura no repite la mutación ni genera un segundo adjunto.
+            try:
+                rows = (
+                    await self._request(
+                        "GET",
+                        "/rest/v1/case_documents",
+                        params={"id": f"eq.{document_id}", "select": "*"},
+                    )
+                ).json()
+                if rows and rows[0].get("sha256") == metadata["sha256"]:
+                    return rows[0]
+            except UserError:
+                pass
             # No se borra un objeto documental automáticamente. Reconciliación por administrador.
             raise UserError(
                 "El archivo se subió, pero no se pudo registrar el adjunto. Informa al administrador antes de repetir la carga."
             ) from exc
-        return response.json()[0]
+        return response.json()
 
     async def download_document(self, document):
         response = await self._request(

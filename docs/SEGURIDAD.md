@@ -27,3 +27,5 @@ Las sesiones nativas y del servidor Flet se mantienen en memoria. La web estáti
 El historial guarda actor, fecha y motivo. No contiene copias de contraseñas ni JWT. El CSV omite documentos de identidad y contactos, y neutraliza prefijos de fórmula; exporta solamente la página visible.
 
 Las pruebas automatizadas cubren aislamiento por área, perfil de consulta, usuario inactivo, acceso anónimo, bloqueo de edición directa, prohibición de borrado de auditoría, concurrencia e idempotencia. Falta la validación operativa con cuentas reales y la revisión integral del despliegue de producción; no se declara el sistema certificado ni listo para uso oficial sin esa validación.
+
+Desde la mejora de integridad, PostgreSQL vuelve a leer los bytes de Storage antes de confirmar un adjunto y comprueba firma, extensión, tipo, tamaño y SHA-256. La extensión HTTP solo puede ejecutarse por las funciones internas autorizadas, con destino fijo y tiempo limitado. Las pruebas HTTP simuladas viven exclusivamente en la base aislada de CI. Ver [MEJORAS_BD.md](MEJORAS_BD.md).

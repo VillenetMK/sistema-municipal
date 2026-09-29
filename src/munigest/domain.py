@@ -88,11 +88,9 @@ def validate_case_work(raw):
     }
 
 
-def validate_draft(raw):
+def validate_person(raw):
     data = dict(raw)
-    data["title"] = clean_text(data.get("title"), "Asunto", 5, 160)
-    data["description"] = clean_text(data.get("description"), "Descripción", 10, 5000)
-    data["applicant_name"] = clean_text(data.get("applicant_name"), "Nombre o razón social", 3, 180)
+    data["full_name"] = clean_text(data.get("full_name"), "Nombre o razón social", 3, 180)
     kind = data.get("document_type", "DNI")
     patterns = {
         "DNI": r"[0-9]{8}",
@@ -106,13 +104,6 @@ def validate_draft(raw):
             "Revisa el tipo y número de documento: DNI 8 dígitos; RUC 11; CE 9–12; pasaporte 6–15."
         )
     data["document_type"] = kind
-    for key in ("department_id", "request_id"):
-        try:
-            data[key] = str(UUID(data[key]))
-        except (ValueError, TypeError, KeyError):
-            raise UserError("Selecciona un área de destino válida.") from None
-    if data.get("channel") not in CHANNELS or data.get("priority") not in PRIORITIES:
-        raise UserError("Selecciona el canal de ingreso y la prioridad.")
     data["email"] = str(data.get("email") or "").strip()
     if data["email"] and (
         len(data["email"]) > 254 or not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", data["email"])
@@ -121,6 +112,26 @@ def validate_draft(raw):
     data["phone"] = str(data.get("phone") or "").strip()
     if data["phone"] and not re.fullmatch(r"\+?[0-9 ()-]{7,20}", data["phone"]):
         raise UserError("Revisa el teléfono de contacto.")
+    return {
+        key: data[key]
+        for key in ("full_name", "document_type", "document_number", "email", "phone")
+    }
+
+
+def validate_draft(raw):
+    data = dict(raw)
+    data["title"] = clean_text(data.get("title"), "Asunto", 5, 160)
+    data["description"] = clean_text(data.get("description"), "Descripción", 10, 5000)
+    person = validate_person({**data, "full_name": data.get("applicant_name")})
+    data.update(person)
+    data["applicant_name"] = data.pop("full_name")
+    for key in ("department_id", "request_id"):
+        try:
+            data[key] = str(UUID(data[key]))
+        except (ValueError, TypeError, KeyError):
+            raise UserError("Selecciona un área de destino válida.") from None
+    if data.get("channel") not in CHANNELS or data.get("priority") not in PRIORITIES:
+        raise UserError("Selecciona el canal de ingreso y la prioridad.")
     data["due_on"] = optional_date(data.get("due_on"), "Fecha objetivo interna")
     data["procedure_id"] = optional_uuid(data.get("procedure_id"), "un trámite")
     data["assigned_to"] = optional_uuid(data.get("assigned_to"), "un responsable")

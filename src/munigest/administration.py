@@ -4,10 +4,15 @@ import re
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
 
-from munigest.domain import ROLES, UserError, clean_text
+from munigest.domain import ROLES, UserError, clean_text, optional_date
 from munigest.institution import UNIT_TYPES
 
-ENTITIES = {"departments": "Áreas", "procedures": "Trámites", "staff_profiles": "Personal"}
+ENTITIES = {
+    "departments": "Áreas",
+    "procedures": "Trámites",
+    "staff_profiles": "Personal",
+    "applicants": "Solicitantes",
+}
 
 
 def validate_admin_record(entity, raw):
@@ -22,6 +27,10 @@ def validate_admin_record(entity, raw):
         )
     except (ValueError, KeyError, TypeError):
         raise UserError("El identificador o el área seleccionada no son válidos.") from None
+    if entity == "applicants":
+        from munigest.domain import validate_person
+
+        return {"id": data["id"], **validate_person(data)}
     if type(data.get("is_active")) is not bool:
         raise UserError("Indica si el registro está activo.")
     if entity == "staff_profiles":
@@ -43,11 +52,19 @@ def validate_admin_record(entity, raw):
             raise UserError("El enlace de referencia debe ser una dirección HTTPS válida.")
         data["source_url"] = source or None
     elif entity == "procedures":
+        source = clean_text(data.get("source_url"), "Fuente", 0, 1000)
+        if source and not re.fullmatch(r"https://[^\s/?#]+(?:[/?#][^\s]*)?", source):
+            raise UserError("La fuente del trámite debe ser una dirección HTTPS válida.")
+        data["source_url"] = source or None
+        for date_field in ("valid_from", "valid_until"):
+            data[date_field] = optional_date(data.get(date_field), "Vigencia de la ficha")
+        if data["valid_from"] and data["valid_until"] and data["valid_from"] > data["valid_until"]:
+            raise UserError("El fin de vigencia no puede ser anterior al inicio.")
         data["requirements"] = clean_text(data.get("requirements"), "Requisitos", 0, 5000)
         data["legal_basis"] = clean_text(data.get("legal_basis"), "Sustento", 0, 2000) or None
         if type(data.get("is_official")) is not bool:
             raise UserError("Indica si la ficha tiene sustento oficial.")
-        if data["is_official"] and not data["legal_basis"]:
+        if data["is_official"] and (not data["legal_basis"] or not data["source_url"]):
             raise UserError("Añade el sustento y la referencia antes de marcar la ficha oficial.")
         for field in ("fee_pen", "deadline_days"):
             value = str(data.get(field) or "").strip()
@@ -91,6 +108,9 @@ def validate_admin_record(entity, raw):
             "legal_basis",
             "fee_pen",
             "deadline_days",
+            "source_url",
+            "valid_from",
+            "valid_until",
         },
         "staff_profiles": {"display_name", "role", "department_id"},
     }

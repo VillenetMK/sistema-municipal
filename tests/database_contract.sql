@@ -58,11 +58,14 @@ begin
 end $$;
 
 -- Simulación local de un objeto cargado y su metadata documental.
+select set_config('request.headers','{"authorization":"Bearer test-session-token","apikey":"sb_publishable_test_key_only"}',true);
+insert into test_support.document_bytes(path,content)
+values(current_setting('test.case_id') || '/cccccccc-0000-4000-8000-000000000001.pdf',convert_to('%PDF-prueba','UTF8'));
 insert into storage.objects(bucket_id,name,owner_id)
  values('expedientes',current_setting('test.case_id') || '/cccccccc-0000-4000-8000-000000000001.pdf',auth.uid()::text);
 insert into public.case_documents(id,case_id,file_name,object_path,media_type,size_bytes,sha256,created_by)
  values('cccccccc-0000-4000-8000-000000000001',current_setting('test.case_id')::uuid,'solicitud.pdf',
- current_setting('test.case_id') || '/cccccccc-0000-4000-8000-000000000001.pdf','application/pdf',100,repeat('0',64),auth.uid());
+ current_setting('test.case_id') || '/cccccccc-0000-4000-8000-000000000001.pdf','application/pdf',11,encode(sha256(convert_to('%PDF-prueba','UTF8')),'hex'),auth.uid());
 do $$ begin
  if (select count(*) from public.case_documents)<>1 then raise exception 'Adjunto no registrado'; end if;
  if (select count(*) from public.case_events)<>3 then raise exception 'Adjunto sin historial'; end if;
