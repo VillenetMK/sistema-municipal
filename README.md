@@ -3,13 +3,15 @@
 
 Aplicación para registrar solicitudes, derivarlas entre áreas y consultar el historial de cada expediente. Incluye una demostración con datos ficticios para explorar el flujo sin una cuenta.
 
+**[Abrir MuniGest en el navegador](https://villenetmk.github.io/sistema-municipal/)** · [Guía de acceso y publicación web](docs/WEB.md).
+
 | En un vistazo | Detalle |
 |---|---|
 | Problema | Dar seguimiento al recorrido de una solicitud y a las actuaciones de cada área |
 | Tecnologías | Python, Flet, Supabase y PostgreSQL |
 | Funciones | Roles, bandejas, derivaciones, historial, adjuntos y reportes |
 | Demostración | Local, con registros ficticios aislados por sesión |
-| Estado | Piloto interno 0.1; APK Android publicado; validación municipal y despliegue del servicio pendientes |
+| Estado | Piloto interno 0.1; web y APK Android publicados; validación municipal pendiente |
 
 **Explorar:** [ejecutar la demostración](#ejecutar-la-demostración) · [alcance](docs/ALCANCE.md) · [validación](docs/VALIDACION.md) · [modelo de seguridad](docs/SEGURIDAD.md)
 
@@ -42,7 +44,7 @@ Un ciudadano presenta una solicitud; Mesa de Partes la registra; un área la rev
 - Identidad de Chiclayo, catorce gerencias verificadas y un punto de recepción para el piloto.
 - Referencias al organigrama y TUPA 2026, con accesos a los portales oficiales desde el catálogo.
 
-**Estado: base funcional para un piloto interno, versión 0.1.** La identidad institucional está configurada; falta la validación municipal de responsables, áreas operativas y fichas TUPA. El APK piloto de Android ya está compilado, probado en emulador y publicado; falta comprobarlo en un teléfono físico con una cuenta válida. Los instaladores de escritorio y el servicio web siguen pendientes.
+**Estado: base funcional para un piloto interno, versión 0.1.** La identidad institucional está configurada; falta la validación municipal de responsables, áreas operativas y fichas TUPA. El APK piloto de Android ya está compilado, probado en emulador y publicado; falta comprobarlo en un teléfono físico con una cuenta válida. La versión web está publicada en GitHub Pages y utiliza la misma base municipal. Los instaladores de escritorio siguen pendientes.
 
 Chiclayo ya dispone de mesa de partes virtual y SGD. Este piloto conserva registros internos y todavía no se sincroniza con esos servicios. Ver [configuración de Chiclayo, fuentes y alcance de la integración](docs/CHICLAYO.md).
 
@@ -98,7 +100,7 @@ Entrar con una de las cuentas de prueba ya entregadas para el piloto, o crear un
 
 Para la cuenta administradora del piloto, escribir `admin` en **Usuario o correo** y usar la contraseña entregada por separado. El correo completo también sigue siendo válido.
 
-Se crearon y probaron cuatro cuentas del piloto, una por rol; sus credenciales se entregaron fuera del repositorio. Para crear cuentas individuales se incluyen [invitaciones desde la aplicación](docs/CUENTAS.md) y una [herramienta operativa de alta](docs/USUARIOS.md). El [despliegue del servidor](docs/DESPLIEGUE.md) incluye Dockerfile y Compose. Las cuentas de trabajadores reales y la publicación del servicio siguen pendientes.
+Se crearon y probaron cuatro cuentas del piloto, una por rol; sus credenciales se entregaron fuera del repositorio. Para crear cuentas individuales se incluyen [invitaciones desde la aplicación](docs/CUENTAS.md) y una [herramienta operativa de alta](docs/USUARIOS.md). El [despliegue del servidor](docs/DESPLIEGUE.md) incluye Dockerfile y Compose. Las cuentas de trabajadores reales siguen pendientes. La [versión web](docs/WEB.md) funciona directamente desde GitHub Pages.
 
 La aplicación no incluye claves secretas, contraseñas de base de datos ni credenciales `service_role`. Las sesiones se mantienen en memoria y se renuevan de forma asíncrona. Un fallo de conexión real nunca activa automáticamente la demostración.
 
@@ -106,12 +108,12 @@ La aplicación no incluye claves secretas, contraseñas de base de datos ni cred
 
 | Destino | Ejecución prevista | Estado de esta entrega |
 |---|---|---|
-| Web | Servidor Python de Flet | Código y arranque HTTP comprobados; despliegue pendiente |
+| Web | Python en el navegador con Flet y Pyodide; GitHub Pages | Publicada, con comprobaciones en Chromium de acceso, conexión y archivos |
 | Windows / Linux | Cliente nativo Flet | Lógica probada y capturas del cliente Linux revisadas a 390 y 1280 píxeles; empaquetado y comprobación en Windows pendientes |
 | Android | APK universal generado con Flet | Publicado y probado en emulador Android 15; prueba en teléfono físico pendiente |
 | macOS / iOS | Herramientas Flet y equipo macOS | Posibles ampliaciones; todavía sin validación de plataforma |
 
-Las instrucciones de compilación están en [puesta en marcha](docs/PUESTA_EN_MARCHA.md). La variante web inicial usa un servidor Python; no presupone que HTTPX funcione en una exportación estática WebAssembly.
+Las instrucciones de compilación están en [puesta en marcha](docs/PUESTA_EN_MARCHA.md). La variante web publicada adapta HTTPX a Fetch y genera documentos sin hilos. También se conserva la opción de alojar el servidor Python mediante Docker. Ver [publicación web](docs/WEB.md).
 
 **Android:** [descargar el APK piloto](https://github.com/VillenetMK/sistema-municipal/releases/tag/android-piloto-8) y consultar la [guía de instalación, firma y pruebas](docs/ANDROID.md). Lleva la configuración pública municipal; no se copia `.env` al teléfono. Las pruebas de PDF y adjuntos usan una demostración aislada; el cliente municipal comprueba arranque, conexión Auth y formularios públicos.
 

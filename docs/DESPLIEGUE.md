@@ -1,6 +1,6 @@
 # Servidor Python de MuniGest
 
-Se incluye `Dockerfile` y `compose.yaml` para ejecutar la aplicación Flet. Esta entrega prepara el despliegue; no crea un alojamiento público ni publica una dirección web.
+Se incluye `Dockerfile` y `compose.yaml` para ejecutar la aplicación Flet. Esta alternativa permite alojar un servidor Python propio. La [versión web publicada en GitHub Pages](WEB.md) ejecuta Python en el navegador y no necesita este servidor.
 
 ## Ejecución sin Docker
 

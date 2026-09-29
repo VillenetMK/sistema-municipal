@@ -1,13 +1,13 @@
 # Validación de la versión 0.1
 
 Fecha: 16 de septiembre de 2026.
-Última actualización: 25 de septiembre de 2026.
+Última actualización: 29 de septiembre de 2026.
 
 ## Resultados comprobados
 
 | Comprobación | Resultado |
 |---|---|
-| Pruebas Python | 117 aprobadas, incluidos reportes, cuentas, respaldos, filtros al cerrar el panel, navegación activa y arranque desde Python compilado sin los archivos originales |
+| Pruebas Python | 121 aprobadas, incluidos reportes, cuentas, respaldos, filtros al cerrar el panel, navegación activa y arranque desde Python compilado sin los archivos originales |
 | Análisis estático Ruff | Sin errores |
 | Construcción de las pantallas | Login, resumen, bandeja, registro, detalle, catálogo y Administración (listas y formularios); anchos 390 y 1280 |
 | Revisión visual nativa | Veinte capturas del cliente Flet en Linux, a 390 × 844 y 1280 × 960; revisión de acceso, recuperación, resumen, filtros, registro, detalle, catálogo, Administración y reportes |
@@ -187,3 +187,19 @@ Se compilaron y probaron APK en el emulador Android descrito arriba. No se compi
 Dockerfile y Compose están preparados; su construcción no se ejecutó porque el entorno no dispone de Docker. La comprobación HTTP corresponde al proceso Python, no a una imagen construida.
 
 El historial de pruebas SQL se ejecuta dentro de una transacción con rollback. Los scripts de bootstrap son únicamente para bases locales de pruebas. El workflow del repositorio repetirá las comprobaciones en PostgreSQL 17.
+
+## Publicación web del 29 de septiembre de 2026
+
+[Publicación y comprobaciones aprobadas](https://github.com/VillenetMK/sistema-municipal/actions/runs/36577125976), desde el commit `c33d3e4c54d4e72be748ac0f879566385fa9ab34`.
+
+- Chromium ejecutó el cliente Python con Pyodide 0.29.4 y Flet 1.0.0, servido como archivos estáticos bajo `/sistema-municipal/`.
+- La variante municipal abrió el acceso, realizó una petición real a Supabase Auth con credenciales vacías, mostró su rechazo y abrió la recuperación de contraseña.
+- La demostración abrió resumen y bandeja, filtró un expediente abierto por asunto, descargó una constancia PDF y verificó su texto, adjuntó ese archivo en memoria y exportó CSV y reporte PDF con contenido comprobado.
+- Se conservaron capturas de escritorio y móvil, salida de consola y resultados en los artefactos `pruebas-web-supabase` y `pruebas-web-demo`. No se detectaron errores Python ni desbordamientos de layout.
+- Las 121 pruebas Python incluyen conservación de credenciales y binarios en Fetch, rechazo de redirecciones, errores de red, cancelación por tiempo límite y generación sin hilos en Pyodide.
+- La API municipal rechazó lecturas anónimas de `cases` y `staff_profiles` con HTTP 401. Se comprobó CORS para el origen publicado.
+- Adicionalmente se inició sesión contra la API real con el alias administrador existente, se consultaron 15 áreas y el resumen y se cerró esa sesión. Esa comprobación de cuenta se realizó mediante el cliente Python, no mediante escritura de datos en la interfaz publicada.
+
+La aplicación se publica en **https://villenetmk.github.io/sistema-municipal/**. Se abrió el enlace HTTPS publicado y se comprobó visualmente el formulario completo de acceso. No se modificaron el esquema, las políticas de acceso, las cuentas ni los expedientes municipales. La base de EcoSphere permanece fuera de esta configuración.
+
+La primera carga requiere Internet para descargar el entorno y las dependencias desde las fuentes de Flet/Pyodide/PyPI. Esta validación corresponde a Chromium; no certifica todos los navegadores ni sustituye la aceptación operativa municipal.
