@@ -1,6 +1,5 @@
 """Descargas que vuelven a verificar el acceso y obtienen una consulta completa."""
 
-import asyncio
 from copy import deepcopy
 
 import flet as ft
@@ -8,12 +7,13 @@ import flet as ft
 from munigest.pdf_exports import receipt_pdf, summary_pdf
 from munigest.reports import filter_description, local_timestamp, report_csv, report_summary
 from munigest.ui import panel, small
+from munigest.web_runtime import build_document
 
 
 async def download_receipt(app, case_id, control):
     async def work():
         receipt = await app.repo.case_receipt(case_id)
-        content = await asyncio.to_thread(receipt_pdf, receipt)
+        content = await build_document(receipt_pdf, receipt)
         await app.picker.save_file(
             file_name=f"constancia_{receipt['case']['reference']}.pdf", src_bytes=content
         )
@@ -40,7 +40,7 @@ async def show_report(app):
                 # Cada descarga comprueba nuevamente sesión, perfil y RLS en el servidor.
                 report = await load()
                 builder = report_csv if format_name == "csv" else summary_pdf
-                content = await asyncio.to_thread(builder, report)
+                content = await build_document(builder, report)
                 prefix = "expedientes" if format_name == "csv" else "resumen_expedientes"
                 await app.picker.save_file(
                     file_name=f"{prefix}_{report['local_date']}.{format_name}", src_bytes=content

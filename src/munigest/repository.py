@@ -19,6 +19,7 @@ from munigest.domain import (
     validate_draft,
 )
 from munigest.reports import report_filters, search_term
+from munigest.web_runtime import browser_transport
 from munigest.work_queue import rest_filters
 
 
@@ -34,7 +35,7 @@ class SupabaseRepository(AccountOperations):
             base_url=settings.url,
             headers={"apikey": settings.key},
             timeout=httpx.Timeout(25, connect=8),
-            transport=transport,
+            transport=transport if transport is not None else browser_transport(),
             follow_redirects=False,
         )
         self.session = None
