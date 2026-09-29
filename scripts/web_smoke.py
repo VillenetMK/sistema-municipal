@@ -154,7 +154,10 @@ def main():
                     with page.expect_file_chooser() as chooser:
                         page.get_by_role("button", name="Adjuntar documento", exact=True).click()
                     chooser.value.set_files(receipt)
-                    expect(page.get_by_text("Documento adjuntado.", exact=True)).to_be_visible()
+                    # El aviso también se duplica en la región aria-live de Flutter.
+                    expect(
+                        page.locator("span").filter(has_text=re.compile(r"^Documento adjuntado\.$"))
+                    ).to_be_visible()
                     checks.append("adjunto PDF en memoria demo")
                     page.screenshot(path=output / "02-expediente.png")
                     page.get_by_role("button", name="Expedientes", exact=True).click()
