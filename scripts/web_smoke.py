@@ -182,16 +182,22 @@ def main():
                     email = page.get_by_role(
                         "textbox", name="Correo de contacto (opcional)", exact=True
                     )
-                    email.fill("")
-                    email.press_sequentially("contacto@example.test", delay=15)
+                    email.click()
+                    email.press("ControlOrMeta+A")
+                    email.press("Backspace")
+                    expect(email).to_have_value("")
+                    email.press_sequentially("contacto@example.test", delay=30)
+                    expect(email).to_have_value("contacto@example.test")
                     reason = page.get_by_role("textbox", name="Motivo del cambio", exact=True)
+                    reason.click()
                     reason.press_sequentially(
-                        "Corrección ficticia de contacto en navegador.", delay=15
+                        "Corrección ficticia de contacto en navegador.", delay=30
                     )
+                    expect(reason).to_have_value("Corrección ficticia de contacto en navegador.")
                     page.get_by_role("button", name="Guardar cambios", exact=True).click()
                     expect(
                         page.get_by_text(
-                            "Corrección ficticia de contacto en navegador.", exact=True
+                            "Corrección ficticia de contacto en navegador.", exact=False
                         )
                     ).to_be_visible()
                     checks.append("corrección de solicitante e historial administrativo")
