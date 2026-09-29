@@ -35,7 +35,8 @@ def main():
             page.on("pageerror", lambda error: logs.append(f"pageerror: {error}"))
             try:
                 page.goto(f"http://127.0.0.1:{server.server_port}/sistema-municipal/")
-                page.locator("flt-semantics-placeholder").click(force=True, timeout=180000)
+                # El control de accesibilidad de Flutter vive fuera del viewport.
+                page.locator("flt-semantics-placeholder").dispatch_event("click", timeout=180000)
                 if args.mode == "supabase":
                     expect(page.get_by_text("Iniciar sesión", exact=True)).to_be_visible(
                         timeout=180000
@@ -114,6 +115,9 @@ def main():
                     json.dumps({"mode": args.mode, "checks": checks}, ensure_ascii=False, indent=2)
                 )
                 print(json.dumps({"mode": args.mode, "checks": checks}, ensure_ascii=False))
+            except Exception:
+                print("\n".join(logs[-60:]), flush=True)
+                raise
             finally:
                 page.screenshot(path=output / "estado-final.png")
                 (output / "console.log").write_text("\n".join(logs))
