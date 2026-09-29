@@ -41,7 +41,7 @@ Esta entrega no calcula impuestos, emite comprobantes oficiales, realiza pagos n
 
 La UI y la lógica del cliente están escritas en Python. Flet renderiza controles nativos con Flutter. Supabase aporta PostgreSQL, autenticación, API y almacenamiento. Las reglas críticas se aplican también en SQL, de modo que no dependan de que el usuario utilice esta interfaz.
 
-El servidor web mantiene una instancia de repositorio y sesión por usuario. Los clientes nativos llaman a la misma API con la clave publicable y el JWT del trabajador. No se guarda la contraseña, el token ni documentos reales en un caché de disco. La primera versión requiere conexión para trabajar con datos reales.
+El servidor Flet mantiene una instancia de repositorio y sesión por usuario. Los clientes nativos llaman a la misma API con la clave publicable y el JWT del trabajador. En la web estática, los tokens se conservan cifrados en el almacenamiento de la pestaña para restaurar el acceso tras F5; se valida la identidad y el perfil actual antes de abrir el sistema. No se guardan contraseñas ni documentos reales en un caché de disco. La primera versión requiere conexión para trabajar con datos reales.
 
 ## Estados del expediente
 

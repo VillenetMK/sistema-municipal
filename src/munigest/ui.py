@@ -37,6 +37,7 @@ from munigest.domain import (
 )
 from munigest.institution import INSTITUTION_NAME, OFFICIAL_RESOURCES, UNIT_TYPES
 from munigest.repository import SupabaseRepository
+from munigest.session_storage import browser_session_store
 from munigest.work_queue import due_notice, eligible_workers
 
 NAV = [
@@ -64,7 +65,11 @@ class MunicipalApp:
         self.page = page
         self.settings = settings
         self.repo = repository or (
-            DemoRepository() if settings.mode == "demo" else SupabaseRepository(settings)
+            DemoRepository()
+            if settings.mode == "demo"
+            else SupabaseRepository(
+                settings, session_store=browser_session_store(page, settings.project_ref)
+            )
         )
         self.profile = None
         self.departments = []
@@ -103,6 +108,41 @@ class MunicipalApp:
 
     async def close(self, _=None):
         await self.repo.close()
+
+    async def start(self):
+        if self.settings.mode == "demo":
+            self.login()
+            return
+        self.page.controls.clear()
+        self.page.add(
+            ft.Container(
+                ft.Column(
+                    [ft.ProgressRing(), ft.Text("Recuperando tu sesión…")],
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    alignment=ft.MainAxisAlignment.CENTER,
+                ),
+                expand=True,
+                alignment=ft.Alignment.CENTER,
+            )
+        )
+        try:
+            self.profile = await self.repo.restore_session()
+            if self.profile:
+                await self.open_workspace()
+            else:
+                self.login()
+        except UserError as exc:
+            self.profile = None
+            self.login()
+            self.notify(str(exc))
+
+    async def open_workspace(self):
+        self.departments, settings = await asyncio.gather(
+            self.repo.departments(), self.repo.settings()
+        )
+        self.institution = settings["institution_name"]
+        self.shell()
+        await self.navigate(0)
 
     def resize(self, _=None):
         mobile = (self.page.width or 1100) < 850
@@ -177,16 +217,11 @@ class MunicipalApp:
                     self.profile = await self.repo.sign_in(
                         identifier.value or "", password.value or ""
                     )
-                    self.departments, settings = await asyncio.gather(
-                        self.repo.departments(), self.repo.settings()
-                    )
-                    self.institution = settings["institution_name"]
+                    password.value = ""
+                    await self.open_workspace()
                 except UserError as exc:
                     error.value, error.visible = str(exc), True
                     return
-                password.value = ""
-                self.shell()
-                await self.navigate(0)
 
             await self.guard(work, e.control)
 
@@ -1160,4 +1195,4 @@ async def main(page: ft.Page):
         page.add(ft.Text("Configuración pendiente", size=24), ft.Text(str(exc)))
         return
     app = MunicipalApp(page, settings)
-    app.login()
+    await app.start()

@@ -24,7 +24,7 @@ from munigest.work_queue import rest_filters
 
 
 class SupabaseRepository(AccountOperations):
-    def __init__(self, settings, transport=None):
+    def __init__(self, settings, transport=None, *, session_store=None):
         settings.validate()
         self.login_aliases = (
             {"admin": "admin.piloto@munigest.invalid"}
@@ -40,9 +40,12 @@ class SupabaseRepository(AccountOperations):
         )
         self.session = None
         self.profile = None
+        self.session_store = session_store
         self._refresh_lock = asyncio.Lock()
 
-    async def _request(self, method, path, *, authenticated=True, **kwargs):
+    async def _request(
+        self, method, path, *, authenticated=True, refreshing_session=False, **kwargs
+    ):
         headers = dict(kwargs.pop("headers", {}))
         if authenticated:
             await self._ensure_session()
@@ -58,8 +61,10 @@ class SupabaseRepository(AccountOperations):
                 body = response.json()
             except ValueError:
                 body = {}
-            if response.status_code == 401 and authenticated:
-                self.session = None
+            if (response.status_code == 401 and authenticated) or (
+                refreshing_session and response.status_code in {400, 401, 403, 422}
+            ):
+                await self._discard_session()
                 raise SessionExpired("Tu sesión ha vencido. Inicia sesión nuevamente.")
             if not authenticated and response.status_code in {400, 401, 422}:
                 raise UserError(
@@ -82,12 +87,20 @@ class SupabaseRepository(AccountOperations):
             )
         return response
 
-    def _save_session(self, data):
+    async def _save_session(self, data):
         self.session = {
             "access_token": data["access_token"],
             "refresh_token": data["refresh_token"],
             "expires_at": data.get("expires_at", time.time() + data.get("expires_in", 3600)),
         }
+        if self.session_store:
+            await self.session_store.save(self.session)
+
+    async def _discard_session(self):
+        self.session = None
+        self.profile = None
+        if self.session_store:
+            await self.session_store.clear()
 
     async def _ensure_session(self):
         if not self.session:
@@ -99,20 +112,44 @@ class SupabaseRepository(AccountOperations):
                 raise SessionExpired("Inicia sesión para continuar.")
             if self.session["expires_at"] > time.time() + 60:
                 return
-            try:
-                response = await self._request(
-                    "POST",
-                    "/auth/v1/token",
-                    authenticated=False,
-                    params={"grant_type": "refresh_token"},
-                    json={"refresh_token": self.session["refresh_token"]},
-                )
-                self._save_session(response.json())
-            except UserError:
-                self.session = None
-                raise SessionExpired(
-                    "No se pudo renovar tu sesión. Inicia sesión nuevamente."
-                ) from None
+            refresh_token = self.session["refresh_token"]
+            response = await self._request(
+                "POST",
+                "/auth/v1/token",
+                authenticated=False,
+                refreshing_session=True,
+                params={"grant_type": "refresh_token"},
+                json={"refresh_token": refresh_token},
+            )
+            # Un cierre de sesión ocurrido durante la petición no debe deshacerse.
+            if not self.session or self.session["refresh_token"] != refresh_token:
+                raise SessionExpired("Inicia sesión para continuar.")
+            await self._save_session(response.json())
+
+    async def _load_profile(self, user_id):
+        response = await self._request(
+            "GET",
+            "/rest/v1/staff_profiles",
+            params={"user_id": f"eq.{user_id}", "select": "*", "is_active": "eq.true"},
+        )
+        profiles = response.json()
+        if not profiles:
+            await self._discard_session()
+            raise UserError(
+                "Tu cuenta todavía no tiene un perfil municipal activo. Contacta al administrador."
+            )
+        self.profile = profiles[0]
+        return self.profile
+
+    async def restore_session(self):
+        if not self.session_store:
+            return None
+        self.session = await self.session_store.load()
+        if not self.session:
+            return None
+        # Validar en Auth y consultar el perfil actual: el almacenamiento no otorga permisos.
+        response = await self._request("GET", "/auth/v1/user")
+        return await self._load_profile(response.json()["id"])
 
     async def sign_in(self, email, password):
         email = email.strip()
@@ -125,36 +162,25 @@ class SupabaseRepository(AccountOperations):
             json={"email": email, "password": password},
         )
         data = response.json()
-        self._save_session(data)
         try:
-            response = await self._request(
-                "GET",
-                "/rest/v1/staff_profiles",
-                params={
-                    "user_id": f"eq.{data['user']['id']}",
-                    "select": "*",
-                    "is_active": "eq.true",
-                },
-            )
-            profiles = response.json()
-            if not profiles:
-                raise UserError(
-                    "Tu cuenta todavía no tiene un perfil municipal activo. Contacta al administrador."
-                )
-            self.profile = profiles[0]
-            return self.profile
+            await self._save_session(data)
+            return await self._load_profile(data["user"]["id"])
         except Exception:
-            self.session = None
-            self.profile = None
+            await self._discard_session()
             raise
 
     async def sign_out(self):
         try:
             if self.session:
-                await self._request("POST", "/auth/v1/logout", params={"scope": "local"})
+                await self._ensure_session()
+                access_token = self.session["access_token"]
+                # Borrar antes de esperar la red: recargar durante el cierre no restaura el acceso.
+                await self._discard_session()
+                await self.account_request(
+                    "/auth/v1/logout", access_token=access_token, params={"scope": "local"}
+                )
         finally:
-            self.session = None
-            self.profile = None
+            await self._discard_session()
 
     async def close(self):
         self.session = None

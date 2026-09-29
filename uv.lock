@@ -328,6 +328,18 @@ wheels = [
 ]
 
 [[package]]
+name = "flet-secure-storage"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "flet" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/38/b0/fae2bf0f7018bf8a5cde3924d13aff73cf622bdcdc4dca2ea76b25159ff9/flet_secure_storage-1.0.0.tar.gz", hash = "sha256:398c384d27cb6f5957edf1fcd95a6ebf2ee7fa7a473d2bf41ea8a504e7b7c11b", size = 15714, upload-time = "2026-09-14T23:01:51.893Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/19/02/55e042fb0eb5173ce563281932f0164b1d819bb56614a8dc3497d662850d/flet_secure_storage-1.0.0-py3-none-any.whl", hash = "sha256:d688f0699134556a760e24195e678c94e846f62d3497f0a77999a19076021367", size = 16539, upload-time = "2026-09-14T23:01:50.75Z" },
+]
+
+[[package]]
 name = "flet-web"
 version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -533,6 +545,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "flet" },
+    { name = "flet-secure-storage" },
     { name = "httpx", extra = ["socks"] },
     { name = "python-dotenv" },
     { name = "reportlab" },
@@ -562,6 +575,7 @@ operations = [
 requires-dist = [
     { name = "flet", specifier = "==1.0.0" },
     { name = "flet-desktop", marker = "extra == 'desktop'", specifier = "==1.0.0" },
+    { name = "flet-secure-storage", specifier = "==1.0.0" },
     { name = "flet-web", marker = "extra == 'server'", specifier = "==1.0.0" },
     { name = "httpx", extras = ["socks"], specifier = "==0.28.1" },
     { name = "python-dotenv", specifier = "==1.1.1" },

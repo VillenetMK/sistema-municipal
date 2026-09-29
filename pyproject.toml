@@ -5,6 +5,7 @@ description = "Mesa de partes y seguimiento interno de expedientes municipales"
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "flet==1.0.0",
+    "flet-secure-storage==1.0.0",
     "httpx[socks]==0.28.1",
     "python-dotenv==1.1.1",
     "reportlab==5.0.1",

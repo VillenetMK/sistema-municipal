@@ -11,6 +11,7 @@ on:
       - 'scripts/web_smoke.py'
       - 'scripts/prepare_client.py'
       - 'tests/test_web_runtime.py'
+      - 'tests/test_session_persistence.py'
       - 'pyproject.toml'
       - 'uv.lock'
       - '.env.example'

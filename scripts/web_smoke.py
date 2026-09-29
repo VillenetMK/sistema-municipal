@@ -1,7 +1,7 @@
 """Prueba del cliente WebAssembly en Chromium; se ejecuta en GitHub Actions.
 
-El modo municipal solo comprueba el rechazo de credenciales vacías. Los archivos
-y expedientes de prueba pertenecen exclusivamente al modo demo, en memoria.
+El modo municipal comprueba Auth real con credenciales vacías y la persistencia
+con respuestas interceptadas y tokens ficticios. No escribe en la base municipal.
 """
 
 import argparse
@@ -11,8 +11,71 @@ import threading
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import urlparse
 
 from playwright.sync_api import expect, sync_playwright
+
+
+def check_session_reload(page, checks):
+    """Ejercita almacenamiento real, reinicio de Pyodide y cierre sin credenciales reales."""
+    calls = []
+
+    def fixture(route):
+        path = urlparse(route.request.url).path
+        calls.append(path)
+        if path == "/auth/v1/token":
+            body = {
+                "access_token": "browser-test-access",
+                "refresh_token": "browser-test-refresh",
+                "expires_in": 3600,
+                "user": {"id": "browser-test-user"},
+            }
+        elif path == "/auth/v1/user":
+            body = {"id": "browser-test-user"}
+        elif path == "/auth/v1/logout":
+            body = {}
+        elif path == "/rest/v1/staff_profiles":
+            body = [
+                {
+                    "user_id": "browser-test-user",
+                    "display_name": "Prueba de recarga",
+                    "role": "consulta",
+                    "is_active": True,
+                    "department_id": None,
+                }
+            ]
+        elif path == "/rest/v1/municipal_settings":
+            body = [{"institution_name": "Municipalidad de prueba"}]
+        elif path == "/rest/v1/rpc/case_metrics":
+            body = {"total": 0, "pending": 0, "overdue": 0, "resolved": 0}
+        elif path in {"/rest/v1/departments", "/rest/v1/cases"}:
+            body = []
+        else:
+            raise AssertionError(f"Petición inesperada en la prueba: {path}")
+        route.fulfill(status=200, json=body, headers={"access-control-allow-origin": "*"})
+
+    page.context.route("https://lxvmwjcqdjoidgpinmgm.supabase.co/**", fixture)
+    page.get_by_role("textbox", name="Usuario o correo", exact=True).fill("recarga@example.invalid")
+    page.get_by_role("textbox", name="Contraseña", exact=True).fill("browser-test-password")
+    page.get_by_role("button", name="Ingresar", exact=True).click()
+    expect(page.get_by_text("Tu jornada, en orden", exact=True)).to_be_visible()
+    for _ in range(2):
+        page.reload()
+        page.locator("flt-semantics-placeholder").dispatch_event("click", timeout=180000)
+        expect(page.get_by_text("Tu jornada, en orden", exact=True)).to_be_visible(timeout=180000)
+        expect(page.get_by_text("Prueba de recarga", exact=True)).to_be_visible()
+    assert calls.count("/auth/v1/token") == 1
+    assert calls.count("/auth/v1/user") == 2
+    checks.append("dos recargas mantienen la sesión y revalidan el perfil, con API simulada")
+    page.get_by_role("button", name="Cerrar sesión", exact=True).click()
+    expect(page.get_by_text("Iniciar sesión", exact=True)).to_be_visible()
+    page.reload()
+    page.locator("flt-semantics-placeholder").dispatch_event("click", timeout=180000)
+    expect(page.get_by_text("Iniciar sesión", exact=True)).to_be_visible(timeout=180000)
+    assert calls.count("/auth/v1/user") == 2
+    assert calls.count("/auth/v1/logout") == 1
+    checks.append("cerrar sesión y recargar exige identificarse de nuevo")
+    page.context.unroute("https://lxvmwjcqdjoidgpinmgm.supabase.co/**", fixture)
 
 
 def main():
@@ -52,6 +115,7 @@ def main():
                             "Fetch y Supabase Auth: rechazo de credenciales vacías",
                         ]
                     )
+                    check_session_reload(page, checks)
                     page.get_by_role("button", name="Olvidé mi contraseña", exact=True).click()
                     expect(page.get_by_text("Recuperar contraseña", exact=True)).to_be_visible()
                     checks.append("recuperación de acceso")

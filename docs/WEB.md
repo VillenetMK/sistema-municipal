@@ -14,8 +14,9 @@ ni mantener una computadora encendida.
 1. Abrir el enlace con conexión a Internet. La primera carga descarga el entorno de
    ejecución y puede tardar varios segundos.
 2. Escribir el usuario o correo y la contraseña de una cuenta municipal activa.
-3. Cerrar sesión al terminar. Recargar o cerrar la pestaña requiere ingresar de nuevo;
-   los registros confirmados permanecen en Supabase.
+3. Actualizar con F5 conserva el acceso en esa pestaña y vuelve a consultar la información.
+4. Pulsar **Cerrar sesión** al terminar: una recarga posterior vuelve al formulario de acceso.
+   Los registros confirmados permanecen en Supabase.
 
 La cuenta administradora del piloto admite el alias `admin`. Las contraseñas se
 entregan por separado y no se incluyen en el repositorio ni en los archivos publicados.
@@ -41,7 +42,14 @@ administrativos, pruebas, copias de seguridad y credenciales secretas.
 - `BrowserTransport` adapta HTTPX a Fetch únicamente en Pyodide, conservando los
   permisos de la sesión, los errores HTTP y un tiempo límite con cancelación.
 - Las peticiones no usan cookies del navegador ni siguen redirecciones con las
-  credenciales. El cliente no guarda sesiones ni documentos en almacenamiento web.
+  credenciales. La versión web conserva únicamente los tokens y su vencimiento mediante
+  `SecureStorage`, cifrados en `sessionStorage` y separados por proyecto. No guarda
+  contraseñas, perfiles, permisos ni documentos. El almacenamiento de la pestaña permite
+  recuperar la sesión tras F5; no es una opción de recordar el acceso entre navegadores.
+- Al recargar se valida la identidad con Auth y se consulta el perfil municipal activo.
+  Los tokens vencidos se renuevan y sus reemplazos se guardan. Un rechazo de Auth o un
+  perfil inactivo elimina la sesión; un fallo temporal de conexión permite volver a
+  intentarlo. **Cerrar sesión** borra el acceso guardado incluso si falla la red.
 - Los PDF y CSV se generan en memoria. En navegador no se intenta crear hilos de
   Python; escritorio y Android conservan la ejecución en segundo plano.
 - Los adjuntos se seleccionan y descargan con los controles del navegador.
