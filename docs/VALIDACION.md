@@ -7,7 +7,7 @@ Fecha: 16 de septiembre de 2026.
 
 | Comprobación | Resultado |
 |---|---|
-| Pruebas Python | 121 aprobadas, incluidos reportes, cuentas, respaldos, filtros al cerrar el panel, navegación activa y arranque desde Python compilado sin los archivos originales |
+| Pruebas Python | 138 aprobadas, incluidos reportes, cuentas, respaldos, restauración y renovación de sesión, filtros al cerrar el panel, navegación activa y arranque desde Python compilado sin los archivos originales |
 | Análisis estático Ruff | Sin errores |
 | Construcción de las pantallas | Login, resumen, bandeja, registro, detalle, catálogo y Administración (listas y formularios); anchos 390 y 1280 |
 | Revisión visual nativa | Veinte capturas del cliente Flet en Linux, a 390 × 844 y 1280 × 960; revisión de acceso, recuperación, resumen, filtros, registro, detalle, catálogo, Administración y reportes |
@@ -182,7 +182,7 @@ no sustituyen una comprobación en Windows ni una prueba integral en un teléfon
 
 Las políticas se probaron en un PostgreSQL aislado con esquemas Auth y Storage mínimos; la API real se comprobó como cliente anónimo y con las cuatro cuentas del piloto. Las comprobaciones autenticadas cubren acceso, perfiles, lectura sin expedientes y rechazo de edición de perfiles; no equivalen a un recorrido completo con documentación municipal. Faltan pruebas integrales con usuarios municipales reales, cargas y descargas desde dispositivos reales, accesibilidad con lectores de pantalla, concurrencia bajo carga y recuperación integral en un proyecto Supabase de reemplazo.
 
-Se compilaron y probaron APK en el emulador Android descrito arriba. No se compilaron instaladores Windows/Linux ni paquetes iOS/macOS. No se publicó la aplicación web. Las capacidades de despliegue y empaquetado no están certificadas para todos los destinos.
+Se compilaron y probaron APK en el emulador Android descrito arriba. No se compilaron instaladores Windows/Linux ni paquetes iOS/macOS. La publicación web del 29 de septiembre se detalla más abajo. Las capacidades de despliegue y empaquetado no están certificadas para todos los destinos.
 
 Dockerfile y Compose están preparados; su construcción no se ejecutó porque el entorno no dispone de Docker. La comprobación HTTP corresponde al proceso Python, no a una imagen construida.
 
@@ -203,3 +203,14 @@ El historial de pruebas SQL se ejecuta dentro de una transacción con rollback. 
 La aplicación se publica en **https://villenetmk.github.io/sistema-municipal/**. Se abrió el enlace HTTPS publicado y se comprobó visualmente el formulario completo de acceso. No se modificaron el esquema, las políticas de acceso, las cuentas ni los expedientes municipales. La base de EcoSphere permanece fuera de esta configuración.
 
 La primera carga requiere Internet para descargar el entorno y las dependencias desde las fuentes de Flet/Pyodide/PyPI. Esta validación corresponde a Chromium; no certifica todos los navegadores ni sustituye la aceptación operativa municipal.
+
+## Conservación de sesión al recargar, 29 de septiembre de 2026
+
+[Comprobaciones de navegador](https://github.com/VillenetMK/sistema-municipal/actions/runs/36580730188), commit `b750090ea863f972a272058927a2c3189f04993e`.
+
+- Chromium inició sesión con respuestas Auth y REST interceptadas y tokens ficticios. Dos recargas completas reiniciaron Pyodide, conservaron el acceso y volvieron a consultar la identidad y el perfil. El almacenamiento cifrado de la pestaña y la aplicación ejecutada son los reales; las credenciales y respuestas de esta prueba son simuladas.
+- Tras pulsar **Cerrar sesión**, una nueva recarga mostró el formulario de acceso sin volver a consultar el usuario guardado. Se verificó la petición de cierre de sesión. El botón tiene ahora un nombre accesible explícito.
+- Las 138 pruebas Python incluyen tokens rotados, cambios de rol entre recargas, perfiles inactivos, sesiones revocadas, datos de almacenamiento inválidos, fallos temporales de red y cierre durante una renovación. Las contraseñas y los roles no forman parte de la sesión persistida.
+- La variante municipal también comprobó contra Supabase real el rechazo de credenciales vacías. La variante demo aprobó constancia PDF, adjunto, CSV y reporte PDF. Las pruebas de permisos y la interfaz nativa continuaron aprobadas.
+
+La corrección no cambia usuarios, contraseñas, esquema, políticas ni registros municipales. La restauración conserva el inicio de sesión en la pestaña; no guarda formularios pendientes ni activa trabajo sin conexión. Es necesario iniciar sesión una vez después de cargar esta actualización para generar la primera sesión guardada.
